@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Title>Mayfly Discord Bot</Title>
+        <Authors>Kerillian</Authors>
+        <Copyright>Kerillian</Copyright>
+        <PackageProjectUrl>https://github.com/Kerillian/Mayfly</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Kerillian/Mayfly</RepositoryUrl>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="Media\**">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Config.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="Discord.Net.Commands" Version="3.0.0-dev-20211218.3" />
+      <PackageReference Include="Discord.Net.Core" Version="3.0.0-dev-20211218.3" />
+      <PackageReference Include="Discord.Net.Rest" Version="3.0.0-dev-20211218.3" />
+      <PackageReference Include="Discord.Net.Webhook" Version="3.0.0-dev-20211218.3" />
+      <PackageReference Include="Discord.Net.WebSocket" Version="3.0.0-dev-20211218.3" />
+      <PackageReference Include="Lavalink4NET.Discord.NET" Version="2.1.0" />
+      <PackageReference Include="Lavalink4NET.MemoryCache" Version="2.1.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+      <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta13" />
+    </ItemGroup>
+
+</Project>

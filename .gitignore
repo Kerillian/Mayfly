@@ -1,0 +1,11 @@
+.archive/
+.lavalink/
+.idea/
+Config.json
+*.bat
+
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
