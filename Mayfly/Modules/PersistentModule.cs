@@ -34,11 +34,12 @@ namespace Mayfly.Modules
 				{
 					Title = Context.User.Username,
 					ThumbnailUrl = Context.User.GetAvatarUrl(),
+					Color = Color.Purple,
 					Description = Format.Code(string.Join("\n", new string[]
 					{
 						$"Level  : {DatabaseService.CalculateLevel(data.Experience)}",
 						$"Money  : ${data.Money:N0}",
-						$"Tokens : {data.Tokens:N0}mF"
+						$"Tokens : {data.Tokens:N0}"
 					}))
 				}.Build(),
 			};

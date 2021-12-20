@@ -81,7 +81,7 @@ namespace Mayfly
 				.BuildServiceProvider();
 		}
 
-		private void OnCancel(object sender, ConsoleCancelEventArgs args)
+		private void OnCancel(object? sender, ConsoleCancelEventArgs args)
 		{
 			args.Cancel = true;
 

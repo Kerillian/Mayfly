@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Discord;
 using Lavalink4NET.Player;
 using Mayfly.Modules;
+using Mayfly.Utilities;
 
 namespace Mayfly.Extensions
 {
@@ -17,9 +18,9 @@ namespace Mayfly.Extensions
 	{
 		public const string DEFAULT_THUMBNAIL = "https://i.imgur.com/jR8gyDi.png";
 		
-		private static async ValueTask<string> GetThumbnail(this LavalinkTrack track)
+		private static async ValueTask<string> GetThumbnail(this LavalinkTrack? track)
 		{
-			if (track.Source is null)
+			if (track?.Source is null)
 			{
 				return DEFAULT_THUMBNAIL;
 			}
@@ -37,7 +38,7 @@ namespace Mayfly.Extensions
 				var vim when vim.Contains("vimeo")
 					=> (false, $"https://i.vimeocdn.com/video/{track.TrackIdentifier}.png"),
 
-				_ => (false, DEFAULT_THUMBNAIL)
+				_ => (false, null)
 			};
 
 			if (!search)
@@ -53,62 +54,28 @@ namespace Mayfly.Extensions
 						
 			return document.RootElement.TryGetProperty("thumbnail_url", out JsonElement thumbnail) ? $"{thumbnail}" : url;
 		}
-		
-		public static async Task<Embed> GetEmbedAsync(this LavalinkTrack track)
+
+		public static async Task<Embed> GetEmbedAsync(this LavalinkTrack track, string prefix = null, Color? color = null, string defaultThumbnail = null)
 		{
-			RequestInfo info = track.Context as RequestInfo;
-			string name = info?.User?.Username ?? "Mayfly";
-			string url = info?.User?.GetAvatarUrl(ImageFormat.Auto, 64) ?? DEFAULT_THUMBNAIL;
-			
-			return new EmbedBuilder()
+			EmbedBuilder builder = new EmbedBuilder()
 			{
-				Title = track.Title,
-				Url = track.Source,
-				ThumbnailUrl = await GetThumbnail(track),
-				Color = Color.DarkGreen,
-				
-				Fields = new List<EmbedFieldBuilder>()
-				{
-					new EmbedFieldBuilder().WithName("Channel").WithValue(track.Author).WithIsInline(true),
-					new EmbedFieldBuilder().WithName("Duration").WithValue(track.Duration).WithIsInline(true)
-				},
-				
-				Footer = new EmbedFooterBuilder()
-				{
-					Text = $"Queued by {name}",
-					IconUrl = url
-				}
-			}.Build();
+				Title = prefix is null ? track?.Title : $"{prefix}: {track?.Title}",
+				ThumbnailUrl = await track.GetThumbnail() ?? (defaultThumbnail ?? DEFAULT_THUMBNAIL),
+				Color = color ?? Color.DarkGreen
+			};
+
+			builder.AddField("Channel", track.Author, true);
+			builder.AddField("Duration", track.IsSeekable ? $"{(int)track.Duration.TotalMinutes}:{track.Duration.Seconds:00}" : "∞", true);
+
+			if (track.Context is QueueInfo info)
+			{
+				builder.WithFooter($"Queued by: {info.User.Username}", info.User.GetAvatarUrl(size: 64));
+			}
+
+			return builder.Build();
 		}
 
-		public static async Task<Embed> GetEmbedAsync(this LavalinkTrack track, string prefix)
-		{
-			RequestInfo info = track.Context as RequestInfo;
-			string name = info?.User?.Username ?? "Mayfly";
-			string url = info?.User?.GetAvatarUrl(ImageFormat.Auto, 64) ?? DEFAULT_THUMBNAIL;
-			
-			return new EmbedBuilder()
-			{
-				Title = $"{prefix}: {track.Title}",
-				Url = track.Source,
-				ThumbnailUrl = await GetThumbnail(track),
-				Color = Color.DarkGreen,
-
-				Fields = new List<EmbedFieldBuilder>()
-				{
-					new EmbedFieldBuilder().WithName("Channel").WithValue(track.Author).WithIsInline(true),
-					new EmbedFieldBuilder().WithName("Duration").WithValue(track.Duration).WithIsInline(true)
-				},
-				
-				Footer = new EmbedFooterBuilder()
-				{
-					Text = $"Queued by {name}",
-					IconUrl = url
-				}
-			}.Build();
-		}
-
-		public static ICollection<string> GetQueuePaged(this VoteLavalinkPlayer player, int items)
+		public static IEnumerable<string> GetQueuePaged(this VoteLavalinkPlayer player, int items)
 		{
 			List<string> pages = new List<string>();
 			List<string> lines = new List<string>();

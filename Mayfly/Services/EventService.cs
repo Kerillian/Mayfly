@@ -65,8 +65,8 @@ namespace Mayfly.Services
 							await channel.SendMessageAsync(embed: new EmbedBuilder()
 							{
 								Title = "Error: " + mResult.Reason,
-								Description = mResult.Message,
-								Color = Color.Red
+								Color = Color.Red,
+								Description = mResult.Message
 							}.Build());
 							break;
 						
@@ -74,6 +74,7 @@ namespace Mayfly.Services
 							await channel.SendMessageAsync(embed: new EmbedBuilder()
 							{
 								Title = "Parse Failed: " + mResult.Reason,
+								Color = Color.Red,
 								Description = info.IsSpecified
 									? mResult.Message + "\n" + Format.Code(help.GetCommandHelp(info.Value), "cs")
 									: mResult.Message
@@ -86,20 +87,17 @@ namespace Mayfly.Services
 
 				switch (result.Error)
 				{
-					case CommandError.ParseFailed:
-						if (info.IsSpecified)
+					case CommandError.ParseFailed or CommandError.BadArgCount:
+						await channel.SendMessageAsync(embed: new EmbedBuilder()
 						{
-							await channel.SendMessageAsync(Format.Code(help.GetCommandHelp(info.Value), "cs"));
-						}
+							Title = "Error: " + result.Error,
+							Color = Color.Red,
+							Description = info.IsSpecified
+								? result.ErrorReason + "\n" + Format.Code(help.GetCommandHelp(info.Value), "cs")
+								: result.ErrorReason
+						}.Build());
 						break;
-					
-					case CommandError.BadArgCount:
-						if (info.IsSpecified)
-						{
-							await channel.SendMessageAsync(Format.Code(help.GetCommandHelp(info.Value), "cs"));
-						}
-						break;
-				
+
 					case CommandError.UnknownCommand:
 						await context.Message.AddReactionAsync(new Emoji("❌"));
 						break;
@@ -118,8 +116,8 @@ namespace Mayfly.Services
 						await channel.SendMessageAsync(embed: new EmbedBuilder()
 						{
 							Title = "Error: " + (result.Error?.ToString() ?? "Oof"),
-							Description = reason,
-							Color = Color.Red
+							Color = Color.Red,
+							Description = reason
 						}.Build());
 						
 						break;
@@ -147,7 +145,7 @@ namespace Mayfly.Services
 			return Console.Out.WriteLineAsync(txt);
 		}
 
-		private static void OnLogAsync(object obj, LogMessageEventArgs args)
+		private static void OnLogAsync(object? obj, LogMessageEventArgs args)
 		{
 			string txt = $"{DateTime.Now,-8:hh:mm:ss} {$"[{args.Level}]",-9} {args.Source,-8} | {args.Exception?.ToString() ?? args.Message}";
 			Console.WriteLine(txt);

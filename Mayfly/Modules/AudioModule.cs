@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using Mayfly.Extensions;
@@ -15,25 +16,13 @@ using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
-	public class RequestInfo
-	{
-		public IUser User { get; }
-		public ISocketMessageChannel Channel { get; }
-
-		public RequestInfo(IUser user, ISocketMessageChannel channel)
-		{
-			this.User = user;
-			this.Channel = channel;
-		}
-	}
-	
 	[RequireContext(ContextType.Guild), Group("music"), Alias("m"), Summary("Music Module")]
 	public class AudioModule : MayflyModule
 	{
 		public IAudioService LavaNode { private get; set; }
 		public PaginationService Pagination { private get; set; }
 		public RandomService RandomService { private get; set; }
-
+		
 		private async ValueTask<(MayflyPlayer, MayflyResult)> GetPlayer(bool autoConnect = false)
 		{
 			if (Context.User is not IGuildUser user || user.VoiceChannel is null)
@@ -62,7 +51,22 @@ namespace Mayfly.Modules
 
 			return (player, null);
 		}
-		
+
+		private bool IsAdmin()
+		{
+			return Context.User is SocketGuildUser { GuildPermissions: { Administrator: true } or { ManageGuild: true } };
+		}
+
+		private bool IsDJ()
+		{
+			return Context.User is SocketGuildUser user && user.Roles.Any(r => r.Name.ToLower() == "dj");
+		}
+
+		private bool IsRequester(LavalinkTrack track)
+		{
+			return track?.Context is QueueInfo info && info.User.Id == Context.User.Id;
+		}
+
 		[Command("play"), Summary("Play music in discord.")]
 		public async Task<RuntimeResult> Play([Remainder] string query)
 		{
@@ -73,22 +77,61 @@ namespace Mayfly.Modules
 				return result;
 			}
 
-			LavalinkTrack track = await LavaNode.GetTrackAsync(query, SearchMode.YouTube);
+			LavalinkTrack track = null;
+
+			if (query.Contains("youtube.com") || query.Contains("youtu.be") || query.Contains("soundcloud.com"))
+			{
+				track = await LavaNode.GetTrackAsync(query);
+			}
 
 			if (track is null)
 			{
-				track = await LavaNode.GetTrackAsync(query, SearchMode.SoundCloud);
+				track = await LavaNode.GetTrackAsync(query, SearchMode.YouTube);
 
 				if (track is null)
 				{
-					return MayflyResult.FromError("NoResult", "No media was found with that search query.");
+					track = await LavaNode.GetTrackAsync(query, SearchMode.SoundCloud);
+					
+					if (track is null)
+					{
+						return MayflyResult.FromError("NoResult", "No media was found with that search query.");
+					}
 				}
 			}
 			
-			track.Context = new RequestInfo(Context.User, Context.Channel);
+			track.Context = new QueueInfo(Context.User, Context.Channel);
+			
+			if (await player.PlayAsync(track, true) > 0)
+			{
+				await ReplyAsync(embed: await track.GetEmbedAsync("Queued"));
+			}
 
-			int position = await player.PlayAsync(track, true);
-			await ReplyAsync(embed: await track.GetEmbedAsync(position == 0 ? "Playing" : "Queued"));
+			return MayflyResult.FromSuccess();
+		}
+		
+		[Command("moe"), Summary("Queue listen.moe.")]
+		public async Task<RuntimeResult> Moe()
+		{
+			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
+
+			if (result is not null)
+			{
+				return result;
+			}
+
+			LavalinkTrack track = await LavaNode.GetTrackAsync("https://listen.moe/opus");
+
+			if (track is null)
+			{
+				return MayflyResult.FromError("NoTrack", "Failed to load listen.moe, sorry.");
+			}
+
+			track.Context = new QueueInfo(Context.User, Context.Channel);
+
+			if (await player.PlayAsync(track, true) > 0)
+			{
+				await ReplyAsync(embed: await track.GetEmbedAsync("Queued"));
+			}
 
 			return MayflyResult.FromSuccess();
 		}
@@ -102,8 +145,8 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
-			
-			if (player.CurrentTrack?.Context is RequestInfo request && request.User.Id == Context.User.Id)
+
+			if (IsAdmin() || IsDJ() || IsRequester(player.CurrentTrack))
 			{
 				await player.SkipAsync();
 			}
@@ -128,6 +171,11 @@ namespace Mayfly.Modules
 			if (result is not null)
 			{
 				return result;
+			}
+
+			if (!IsAdmin() && !IsDJ() && !IsRequester(player.CurrentTrack))
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't seek this track.");
 			}
 			
 			if (player.State == PlayerState.Playing && player.CurrentTrack is {IsSeekable: true})
@@ -156,6 +204,11 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
+			
+			if (!IsAdmin() && !IsDJ() && !IsRequester(player.CurrentTrack))
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't pause this track.");
+			}
 
 			if (player.State == PlayerState.Paused)
 			{
@@ -179,10 +232,14 @@ namespace Mayfly.Modules
 				return result;
 			}
 
-			await player.StopAsync();
-			await player.DisconnectAsync();
-			
-			return MayflyResult.FromSuccess();
+			if (IsAdmin() || IsDJ() || IsRequester(player.CurrentTrack) && player.Queue.IsEmpty)
+			{
+				await player.StopAsync();
+				await player.DisconnectAsync();
+				return MayflyResult.FromSuccess();
+			}
+
+			return MayflyResult.FromError("NotPermissible", "You can't stop this player.");
 		}
 
 		[Command("queue"), Alias("q"), Summary("List track queue.")]
@@ -226,6 +283,11 @@ namespace Mayfly.Modules
 				return result;
 			}
 
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't clear the queue, only admins and DJs can.");
+			}
+			
 			player.Queue.Clear();
 			await ReplyAsync("Cleared the queue.");
 			
@@ -241,13 +303,18 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
-			
-			if (index > player.Queue.Count - 1 || 0 > index)
+
+			if (--index > player.Queue.Count - 1 || 0 > index)
 			{
 				return MayflyResult.FromUserError("InvalidIndex", "Index is out of queue range.");
 			}
 
 			LavalinkTrack track = player.Queue[index];
+
+			if (!IsAdmin() && !IsDJ() && !IsRequester(track))
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't remove that track from the queue.");
+			}
 
 			await ReplyAsync(embed: await track.GetEmbedAsync("Removed"));
 			player.Queue.RemoveAt(index);
@@ -263,6 +330,11 @@ namespace Mayfly.Modules
 			if (result is not null)
 			{
 				return result;
+			}
+
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't shuffle the queue, only admins and DJs can.");
 			}
 			
 			player.Queue.Shuffle();
@@ -286,11 +358,15 @@ namespace Mayfly.Modules
 				return MayflyResult.FromError("QueueEmpty", "The queue has no tracks.");
 			}
 			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't pick a random track from the queue, only admins and DJs can.");
+			}
+			
 			LavalinkTrack track = player.Queue[RandomService.Next(0, player.Queue.Count - 1)];
 
 			await player.PlayTopAsync(track);
-			await ReplyAsync(embed: await track.GetEmbedAsync("Playing"));
-			
+
 			return MayflyResult.FromSuccess();
 		}
 
@@ -322,6 +398,11 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
+			}
 
 			player.Filters.Distortion = null;
 			player.Filters.Equalizer = null;
@@ -339,7 +420,7 @@ namespace Mayfly.Modules
 		}
 
 		[Command("boost"), Summary("Boost the lower band range.")]
-		public async Task<RuntimeResult> Boost([Range(-0.25, 1.0)] float amount = 1)
+		public async Task<RuntimeResult> Boost([Range(-0.25f, 1.0f)] float amount = 1)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 
@@ -347,12 +428,18 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
+			}
 
 			player.Filters.Equalizer = new EqualizerFilterOptions()
 			{
-				Bands = Enumerable.Range(0, 2).Select(x => new EqualizerBand(x, amount)).ToArray()
+				Bands = Enumerable.Range(0, 3).Select(x => new EqualizerBand(x, amount)).ToArray()
 			};
-			
+
+			await player.Filters.CommitAsync(true);
 			return MayflyResult.FromSuccess();
 		}
 
@@ -364,6 +451,11 @@ namespace Mayfly.Modules
 			if (result is not null)
 			{
 				return result;
+			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
 			}
 
 			player.Filters.Equalizer = new EqualizerFilterOptions()
@@ -384,6 +476,11 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
+			}
 
 			player.Filters.Vibrato = new VibratoFilterOptions()
 			{
@@ -403,6 +500,11 @@ namespace Mayfly.Modules
 			if (result is not null)
 			{
 				return result;
+			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
 			}
 
 			player.Filters.Distortion = new DistortionFilterOptions()
@@ -431,24 +533,19 @@ namespace Mayfly.Modules
 				return result;
 			}
 			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
+			}
+			
 			player.Filters.Equalizer = new EqualizerFilterOptions()
 			{
 				Bands = new EqualizerBand[14]
 				{
-					new EqualizerBand(0, 1),
-					new EqualizerBand(1, 1),
-					new EqualizerBand(2, 1),
-					new EqualizerBand(3, 1),
-					new EqualizerBand(4, 0.5f),
-					new EqualizerBand(5, 0.5f),
-					new EqualizerBand(6, 0.5f),
-					new EqualizerBand(7, 0.5f),
-					new EqualizerBand(8, 0.25f),
-					new EqualizerBand(9, 0.25f),
-					new EqualizerBand(10, 0.25f),
-					new EqualizerBand(11, 0.25f),
-					new EqualizerBand(12, 0.25f),
-					new EqualizerBand(13, 0.25f),
+					new (0, 1), new (1, 1), new (2, 1), new (3, 1),
+					new (4, 0), new (5, 0), new (6, 0), new (7, 0),
+					new (8, 0), new (9, 0), new (10, 0), new (11, 0),
+					new (12, 0), new (13, 0),
 				}
 			};
 
@@ -470,6 +567,11 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
+			}
 
 			player.Filters.Timescale = new TimescaleFilterOptions()
 			{
@@ -490,6 +592,11 @@ namespace Mayfly.Modules
 			if (result is not null)
 			{
 				return result;
+			}
+			
+			if (!IsAdmin() && !IsDJ())
+			{
+				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
 			}
 			
 			player.Filters.Timescale = new TimescaleFilterOptions()

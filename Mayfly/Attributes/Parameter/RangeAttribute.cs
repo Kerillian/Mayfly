@@ -6,8 +6,8 @@ namespace Mayfly.Attributes.Parameter
 {
 	public class RangeAttribute : ParameterPreconditionAttribute
 	{
-		private IComparable Min;
-		private IComparable Max;
+		public readonly IComparable Min;
+		public readonly IComparable Max;
 
 		public RangeAttribute(int min, int max)
 		{
