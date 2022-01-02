@@ -32,6 +32,12 @@ namespace Mayfly.Modules
 
 			MayflyPlayer player = LavaNode.GetPlayer<MayflyPlayer>(Context.Guild.Id);
 
+			if (player?.VoiceChannelId.HasValue == false)
+			{
+				player.Dispose();
+				player = null;
+			}
+
 			if (player is null)
 			{
 				if (autoConnect)
@@ -42,18 +48,13 @@ namespace Mayfly.Modules
 					}
 					
 					player = await LavaNode.JoinAsync<MayflyPlayer>(Context.Guild.Id, user.VoiceChannel.Id, true);
-
-					if (player.State is PlayerState.NotConnected or PlayerState.Destroyed)
-					{
-						await player.DisconnectAsync();
-					}
 				}
 				else
 				{
 					return (null, MayflyResult.FromError("NotConnected", "No active bot session."));
 				}
 			}
-
+			
 			if (user.VoiceChannel.Id != player.VoiceChannelId)
 			{
 				return (null, MayflyResult.FromError("ChannelMismatch", "You are not in the same voice channel."));

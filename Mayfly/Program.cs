@@ -74,7 +74,7 @@ namespace Mayfly
 					{
 						RestUri = $"http://{cfg?.LavaLinkIP}:{cfg?.LavaLinkPort}",
 						WebSocketUri = $"ws://{cfg?.LavaLinkIP}:{cfg?.LavaLinkPort}",
-						Password = cfg?.LavaLinkPassword ?? "youshallnotpass",
+						Password = cfg?.LavaLinkPassword ?? "youshallnotpass"
 					};
 				})
 				.AddSingleton<ILavalinkCache, LavalinkCache>()

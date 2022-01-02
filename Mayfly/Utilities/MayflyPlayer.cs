@@ -27,7 +27,7 @@ namespace Mayfly.Utilities
 
 		public override async Task OnTrackStartedAsync(TrackStartedEventArgs e)
 		{
-			if (CurrentTrack?.Context is QueueInfo info)
+			if (State == PlayerState.Playing && CurrentTrack?.Context is QueueInfo info)
 			{
 				lastId = (await info.Channel.SendMessageAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
 			}
