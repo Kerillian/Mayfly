@@ -6,6 +6,7 @@ namespace Mayfly.Database
 	public class MayflyContext : DbContext
 	{
 		public virtual DbSet<UserData> Users { get; set; }
+		public virtual DbSet<GuildData> Guilds { get; set; }
 		public virtual DbSet<ItemData> Items { get; set; }
 		public virtual DbSet<ReminderData> Reminders { get; set; }
 

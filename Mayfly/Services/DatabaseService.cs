@@ -18,19 +18,7 @@ namespace Mayfly.Services
 		ItemNotFound,
 	}
 	
-	public readonly record struct TransactionResponse
-	{
-		public MarketCode Code { get; }
-		public int Money { get; }
-		public int Amount { get; }
-
-		public TransactionResponse(MarketCode code, int amount, int money)
-		{
-			Code = code;
-			Amount = amount;
-			Money = money;
-		}
-	}
+	public readonly record struct TransactionResponse(MarketCode Code, int Amount, int Money);
 
 	public class DatabaseService
 	{
@@ -116,34 +104,41 @@ namespace Mayfly.Services
 		public async Task<string> TotalMoney()
 		{
 			BigInteger big = 0;
-			return Enumerable.Aggregate(Context.Users, big, (current, user) => BigInteger.Add(current, user.Money)).ToString("N0");
+			return (await Context.Users.ToArrayAsync()).Aggregate(big, (current, user) => BigInteger.Add(current, user.Money)).ToString("N0");
 		}
 		
 		/*
-		 * Reminder methods
+		 * Guild methods
 		 */
-		
-		public async Task AddReminderAsync(IUser user, string message, TimeSpan time)
+
+		public async Task<GuildData> GetGuildAsync(IGuild guild)
 		{
-			Context.Reminders.Add(new ReminderData()
+			return await Context.Guilds.FindAsync(guild.Id);
+		}
+		
+		public async Task ModifyGuildAsync(IGuild guild, Action<GuildData> action)
+		{
+			GuildData data = await Context.Guilds.FindAsync(guild.Id);
+			bool isNull = data == null;
+			
+			if (isNull)
 			{
-				UserId = user.Id,
-				Message = message,
-				DueDate = DateTime.UtcNow + time,
-			});
+				data = new GuildData()
+				{
+					GuildId = guild.Id,
+					AnnouncementId = 0,
+					BlockAnnouncement = false
+				};
+			}
 
-			await Context.SaveChangesAsync();
-		}
+			action(data);
 
-		public async Task RemoveReminderAsync(ReminderData data)
-		{
-			Context.Reminders.Remove(data);
+			if (isNull)
+			{
+				Context.Guilds.Add(data);
+			}
+			
 			await Context.SaveChangesAsync();
-		}
-		
-		public async Task<List<ReminderData>> GetRemindersAsync(IUser user)
-		{
-			return await Context.Reminders.Where(r => r.UserId == user.Id).ToListAsync();
 		}
 
 		/*
@@ -301,6 +296,33 @@ namespace Mayfly.Services
 			return new TransactionResponse(MarketCode.Success, amount, cost);
 		}
 
+		/*
+		 * Reminder methods
+		 */
+		
+		public async Task AddReminderAsync(IUser user, string message, TimeSpan time)
+		{
+			Context.Reminders.Add(new ReminderData()
+			{
+				UserId = user.Id,
+				Message = message,
+				DueDate = DateTime.UtcNow + time,
+			});
+
+			await Context.SaveChangesAsync();
+		}
+
+		public async Task RemoveReminderAsync(ReminderData data)
+		{
+			Context.Reminders.Remove(data);
+			await Context.SaveChangesAsync();
+		}
+		
+		public async Task<List<ReminderData>> GetRemindersAsync(IUser user)
+		{
+			return await Context.Reminders.Where(r => r.UserId == user.Id).ToListAsync();
+		}
+		
 		public async Task Save()
 		{
 			await Context.SaveChangesAsync();

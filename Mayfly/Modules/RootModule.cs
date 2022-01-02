@@ -16,6 +16,8 @@ namespace Mayfly.Modules
 	[Group("root"), RequireOwner, Hidden]
 	public class RootModule : MayflyModule
 	{
+		public DatabaseService Database { get; set; }
+		
 		[Command("resetnick")]
 		public async Task ResetNickname()
 		{
@@ -79,27 +81,40 @@ namespace Mayfly.Modules
 			foreach (SocketGuild guild in Context.Client.Guilds)
 			{
 				SocketTextChannel announceChannel = null;
-				
-				if (guild.CurrentUser.GetPermissions(guild.DefaultChannel).SendMessages)
+				GuildData data = await Database.GetGuildAsync(guild);
+
+				switch (data)
 				{
-					announceChannel = guild.DefaultChannel;
-				}
-				else if (guild.CurrentUser.GetPermissions(guild.SystemChannel).SendMessages)
-				{
-					announceChannel = guild.SystemChannel;
-				}
-				else
-				{
-					foreach (SocketTextChannel channel in guild.TextChannels.OrderBy(c => c.Position))
+					case {BlockAnnouncement: true}:
+						continue;
+					case { AnnouncementId: > 0 }:
+						break;
+					default:
 					{
-						if (guild.CurrentUser.GetPermissions(channel).SendMessages)
+						if (guild.CurrentUser.GetPermissions(guild.DefaultChannel).SendMessages)
 						{
-							announceChannel = channel;
-							break;
+							announceChannel = guild.DefaultChannel;
 						}
+						else if (guild.CurrentUser.GetPermissions(guild.SystemChannel).SendMessages)
+						{
+							announceChannel = guild.SystemChannel;
+						}
+						else
+						{
+							foreach (SocketTextChannel channel in guild.TextChannels.OrderBy(c => c.Position))
+							{
+								if (guild.CurrentUser.GetPermissions(channel).SendMessages)
+								{
+									announceChannel = channel;
+									break;
+								}
+							}
+						}
+
+						break;
 					}
 				}
-			
+
 				if (announceChannel != null)
 				{
 					await announceChannel.SendMessageAsync("", false, new EmbedBuilder()

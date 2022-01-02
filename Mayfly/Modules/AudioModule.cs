@@ -36,7 +36,17 @@ namespace Mayfly.Modules
 			{
 				if (autoConnect)
 				{
+					if (Context.Guild.CurrentUser.GetPermissions(user.VoiceChannel) is not {Connect: true, Speak: true})
+					{
+						return (null, MayflyResult.FromError("NotConnected", "Unable to connect to voice channel and send audio."));
+					}
+					
 					player = await LavaNode.JoinAsync<MayflyPlayer>(Context.Guild.Id, user.VoiceChannel.Id, true);
+
+					if (player.State is PlayerState.NotConnected or PlayerState.Destroyed)
+					{
+						await player.DisconnectAsync();
+					}
 				}
 				else
 				{
