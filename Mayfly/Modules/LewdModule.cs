@@ -21,11 +21,11 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Gelbooru(params string[] tags)
 		{
 			string safe = string.Join("+", tags.Select(Uri.EscapeDataString));
-			List<GelbooruPost> posts = await Http.GetJsonAsync<List<GelbooruPost>>($"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=20&json=1&tags=sort:random+score:>=3+{safe}");
+			GelbooruResult result = await Http.GetJsonAsync<GelbooruResult>($"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=20&json=1&tags=sort:random+score:>=3+{safe}");
 
-			if (posts is { Count: > 0 })
+			if (result is not null && result.Posts.Count > 0)
 			{
-				GelbooruPost post = Random.Pick(posts);
+				GelbooruPost post = Random.Pick(result.Posts);
 				
 				if (post.FileUrl.EndsWith(".webm") || post.FileUrl.EndsWith(".mp4"))
 				{
@@ -51,7 +51,10 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Redgifs(params string[] tags)
 		{
 			string search = string.Join(',', tags.Select(t => StringUtility.ToTitleCase(StringUtility.GetAlphaNumeric(t))));
-			RedgifsResult result = await Http.GetJsonAsync<RedgifsResult>($"https://api.redgifs.com/v2/gifs/search?search_text={search}&count=100");
+			//RedgifsResult result = await Http.GetJsonAsync<RedgifsResult>($"https://api.redgifs.com/v2/gifs/search?search_text={search}&count=100");
+			
+			// Redgifs broke searching somehow? and the changes didn't even get documented.
+			RedgifsResult result = await Http.GetJsonAsync<RedgifsResult>($"https://api.redgifs.com/v2/gifs/search");
 
 			if (result is { Total: > 0 })
 			{

@@ -61,4 +61,25 @@ namespace Mayfly.Structures
 		[JsonIgnore]
 		public string[] TagArray => Tags.Split(' ');
 	}
+
+	public class GelbooruAttributes
+	{
+		[JsonProperty("limit")]
+		public int Limit { get; set; }
+		
+		[JsonProperty("offset")]
+		public int Offset { get; set; }
+		
+		[JsonProperty("count")]
+		public int Count { get; set; }
+	}
+	
+	public class GelbooruResult
+	{
+		[JsonProperty("@attributes")]
+		public GelbooruAttributes Attributes { get; set; }
+
+		[JsonProperty("post")]
+		public List<GelbooruPost> Posts { get; set; }
+	}
 }
