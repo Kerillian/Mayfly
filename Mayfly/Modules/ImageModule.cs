@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Mayfly.Attributes;
 using SixLabors.ImageSharp;
@@ -12,6 +13,7 @@ using Mayfly.Attributes.Parameter;
 using Mayfly.Services;
 using Mayfly.Structures;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Mayfly.Modules
 {
@@ -269,6 +271,45 @@ namespace Mayfly.Modules
 			}
 
 			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
+		}
+
+		[Command("jar"), Summary("Jar somebody.")]
+		public async Task<RuntimeResult> Jar(IUser user)
+		{
+			using Image<Rgba32> avatarImage = await this.http.GetImageAsync<Rgba32>(user.GetAvatarUrl());
+			using Image<Rgba32> jarImage = Image.Load<Rgba32>("./Media/jar.png");
+			using Image<Rgba32> baseImage = new Image<Rgba32>(jarImage.Width, jarImage.Height);
+
+			if (avatarImage != null)
+			{
+				avatarImage.Mutate(x =>
+				{
+					int d = Math.Max(jarImage.Width, jarImage.Height);
+					
+					x.Resize(new ResizeOptions()
+					{
+						Mode = ResizeMode.Stretch,
+						Size = new Size(d / 2, d / 2)
+					});
+				});
+				
+				baseImage.Mutate(x =>
+				{
+					//var p = new Point((baseImage.Width / 2) - (avatarImage.Width / 2), (baseImage.Height / 2) - (avatarImage.Height / 2));
+					x.DrawImage(avatarImage, new Point(256, 620), 1f);
+					x.DrawImage(jarImage, new Point(0, 0), 1f);
+				});
+				
+				await using MemoryStream stream = new MemoryStream();
+				await baseImage.SaveAsPngAsync(stream);
+				stream.Seek(0, SeekOrigin.Begin);
+
+				await this.ReplyFileAsync(stream, "jar.png");
+				
+				return MayflyResult.FromSuccess();
+			}
+
+			return MayflyResult.FromError("LoadFailed", "Failed to load image.");
 		}
 
 		[Command("deepfry"), Summary("Deepfry images.")]
