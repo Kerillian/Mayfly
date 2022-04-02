@@ -104,7 +104,7 @@ namespace Mayfly.Modules
 		}
 		
 		[Command("crush"), Summary("Crushes the image resolution.")]
-		public async Task<RuntimeResult> Crush(string url)
+		public async Task<RuntimeResult> Crush(string url, [Range(0f, 1f)] float scale = 0.5f, [Range(1, 100)] int quality = 10)
 		{
 			using Image image = await this.http.GetMediaAsync(url);
 			
@@ -112,18 +112,18 @@ namespace Mayfly.Modules
 			{
 				image.Mutate(x => {
 					(int w, int h) = x.GetCurrentSize();
-					x.Resize(w - (int)(w * 0.90), h - (int)(h * 0.90), KnownResamplers.NearestNeighbor, false);
+					x.Resize((int)(w * scale), (int)(h * scale), KnownResamplers.NearestNeighbor, false);
 					x.Resize(w, h, KnownResamplers.NearestNeighbor, false);
 				});
 
 				await using MemoryStream stream = new MemoryStream();
 				string ext = await image.SaveAsGifOrJpegAsync(stream, jpegEncoder: new JpegEncoder()
 				{
-					Quality = 5
+					Quality = quality
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.ReplyFileAsync(stream, "fucked" + ext);
+				await this.ReplyFileAsync(stream, "crushed" + ext);
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -171,7 +171,7 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.ReplyFileAsync(stream, "fucked.jpg");
+				await this.ReplyFileAsync(stream, "shifted.jpg");
 				
 				return MayflyResult.FromSuccess();
 			}
