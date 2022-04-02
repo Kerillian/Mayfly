@@ -103,8 +103,8 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
 		}
 		
-		[Command("resfuck"), Summary("Fucks the image resolution.")]
-		public async Task<RuntimeResult> ResFuck(string url)
+		[Command("crush"), Summary("Crushes the image resolution.")]
+		public async Task<RuntimeResult> Crush(string url)
 		{
 			using Image image = await this.http.GetMediaAsync(url);
 			
@@ -131,12 +131,12 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("LoadFailed", "Failed to load image.");
 		}
 
-		[Command("resfuck"), Summary("Fucks the image resolution.")]
-		public async Task<RuntimeResult> ResFuck()
+		[Command("crush"), Summary("Crushes the image resolution.")]
+		public async Task<RuntimeResult> Crush()
 		{
 			if (TryGetAttachmentUrl(out string url))
 			{
-				return await this.ResFuck(url);
+				return await this.Crush(url);
 			}
 
 			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
@@ -156,8 +156,8 @@ namespace Mayfly.Modules
 			}
 		}
 
-		[Command("colorfuck"), Summary("Messes with image color channels.")]
-		public async Task<RuntimeResult> ColorFuck(string url)
+		[Command("shift"), Summary("Messes with image color channels.")]
+		public async Task<RuntimeResult> Shift(string url)
 		{
 			using Image<Rgba32> image = await this.http.GetImageAsync<Rgba32>(url);
 			if (image != null)
@@ -179,12 +179,12 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("InvalidUrl", "Url provided by user is invalid.");
 		}
 
-		[Command("colorfuck"), Summary("Messes with image color channels.")]
-		public async Task<RuntimeResult> ColorFuck()
+		[Command("shift"), Summary("Messes with image color channels.")]
+		public async Task<RuntimeResult> Shift()
 		{
 			if (TryGetAttachmentUrl(out string url))
 			{
-				return await this.ColorFuck(url);
+				return await this.Shift(url);
 			}
 
 			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
