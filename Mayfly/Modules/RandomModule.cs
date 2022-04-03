@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Mayfly.Extensions;
 using Mayfly.Attributes.Parameter;
 using Mayfly.Services;
@@ -10,7 +10,7 @@ using Mayfly.Structures;
 
 namespace Mayfly.Modules
 {
-	public class RandomModule : MayflyModule
+	public class RandomModule : MayflyInteraction
 	{
 		private static readonly string[] DiceIds = new string[6] { "6Zzf1KL", "RKCQ1w5", "P2F567A", "cx94cKE", "zyGoZXz", "a9PEYtY" };
 		private static readonly string[] Answers = new string[20]
@@ -40,9 +40,10 @@ namespace Mayfly.Modules
 		public HttpService Http { get; set; }
 		public RandomService Random { get; set; }
 		
-		[Command("random"), Summary("Get a random image from imgur sub.")]
+		[SlashCommand("random", "Get a random image from imgur sub.")]
 		public async Task<RuntimeResult> RandomSub(string sub)
 		{
+			await DeferAsync();
 			ImgurResult resp = await Http.GetJsonAsync<ImgurResult>($"https://imgur.com/r/{Uri.EscapeDataString(sub)}/new.json");
 
 			if (resp is { Success: true })
@@ -54,7 +55,7 @@ namespace Mayfly.Modules
 					return MayflyResult.FromError("NotNSFW", "This tag or image is marked NSFW, please use this tag in a NSFW channel.");
 				}
 
-				await ReplyAsync("", false, new EmbedBuilder()
+				await FollowupAsync(embed: new EmbedBuilder()
 				{
 					Color = new Color(27, 183, 110),
 					ImageUrl = "https://i.imgur.com/" + image.Hash + image.Ext,
@@ -75,14 +76,14 @@ namespace Mayfly.Modules
 
 			return MayflyResult.FromSuccess();
 		}
-
-		[Command("dice"), Summary("Roll a Six-sided die")]
+		
+		[SlashCommand("dice", "Roll a Six-sided die.")]
 		public async Task Dice()
 		{
 			int roll = Random.Dice();
 			string url = $"https://i.imgur.com/{DiceIds[roll - 1]}.png";
 
-			await ReplyAsync("", false, new EmbedBuilder()
+			await RespondAsync(embed: new EmbedBuilder()
 			{
 				Title = "Dice Roll",
 				Description = $"You rolled a {roll}",
@@ -90,30 +91,30 @@ namespace Mayfly.Modules
 				ThumbnailUrl = url
 			}.Build());
 		}
-
-		[Command("foretell"), Summary("Predicts the future or a future event.")]
-		public async Task Foretell([Remainder] string question)
+		
+		[SlashCommand("foretell", "Predicts the future or a future event.")]
+		public async Task Foretell(string question)
 		{
-			await ReplyToAsync(Random.Pick(Answers));
+			await RespondAsync(Random.Pick(Answers));
 		}
-
-		[Command("rbytes"), Summary("Generate a file with random bytes.")]
-		public async Task RandomBytes(string filename, [Range(1, 8000000)] int size)
+		
+		[SlashCommand("rbytes", "Generate a file with random bytes.")]
+		public async Task RandomBytes(string filename, [MinValue(1), MaxValue(8000000)] int size)
 		{
 			byte[] bytes = new byte[size];
 			Random.NextBytes(bytes);
 
 			await using Stream stream = new MemoryStream(bytes);
-			await this.ReplyFileAsync(stream, filename);
+			await this.RespondWithFileAsync(stream, filename);
 		}
-
-		[Command("xkcd"), Summary("Gets a random comic from xkcd.com")]
+		
+		[SlashCommand("xkcd", "Gets a random comic from xkcd.com")]
 		public async Task Xkcd()
 		{
 			string url = "https://xkcd.com/" + Random.Next(0, 2551);
 			XkcdPost post = await Http.GetJsonAsync<XkcdPost>(url + "/info.0.json");
 
-			await ReplyAsync("", false, new EmbedBuilder()
+			await RespondAsync(embed: new EmbedBuilder()
 			{
 				Color = new Color(0x96A8C8),
 				Timestamp = new DateTimeOffset(new DateTime(post.Year, post.Month, post.Day)),

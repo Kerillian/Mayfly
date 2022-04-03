@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Mayfly.Akinator;
 using Mayfly.Akinator.Enumerations;
@@ -197,17 +198,18 @@ namespace Mayfly.Services
 			}
 		}
 
-		public async Task<bool> NewSessionAsync(IUser user, ISocketMessageChannel channel, Language language, ServerType type)
+		public async Task<bool> NewSessionAsync(SocketInteractionContext ctx, Language language, ServerType type)
 		{
 			await this.Cleanup();
 
-			if (!this.Clients.ContainsKey(user.Id))
+			if (!this.Clients.ContainsKey(ctx.User.Id))
 			{
-				IUserMessage message = await channel.SendMessageAsync("", false, this.presetEmbed, components: components.Build());
+				await ctx.Interaction.RespondAsync(embed: this.presetEmbed, components: components.Build());
+				IUserMessage message = await ctx.Interaction.GetOriginalResponseAsync();
 				AkinatorServerLocator serverLocator = new AkinatorServerLocator();
 				IAkinatorServer server = await serverLocator.SearchAsync(language, type);
 
-				ClientUserPair pair = new ClientUserPair(new AkinatorClient(server), user.Id, message);
+				ClientUserPair pair = new ClientUserPair(new AkinatorClient(server), ctx.User.Id, message);
 
 				try
 				{
@@ -223,7 +225,7 @@ namespace Mayfly.Services
 					return false;
 				}
 
-				this.Clients.TryAdd(user.Id, pair);
+				this.Clients.TryAdd(ctx.User.Id, pair);
 				await pair.UpdateMessage(components);
 
 				return true;

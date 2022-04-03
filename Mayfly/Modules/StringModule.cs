@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Discord.Commands;
+using Discord.Interactions;
 using Mayfly.Extensions;
 using Mayfly.Services;
 
 namespace Mayfly.Modules
 {
-	public class StringModule : MayflyModule
+	public class StringModule : MayflyInteraction
 	{
 		private static readonly Dictionary<char, string> FancyDic = new Dictionary<char, string>()
 		{
@@ -39,14 +39,14 @@ namespace Mayfly.Modules
 
 		public RandomService Random { get; set; }
 
-		[Command("space"), Alias("s"), Summary("S P A C E  M E M E  D U D E.")]
-		public async Task Space([Remainder] string text)
+		[SlashCommand("space", "S P A C E  M E M E  D U D E.")]
+		public async Task Space(string text)
 		{
-			await ReplyAsync(string.Join(' ', text.LazySubstring(0, 1999).ToCharArray()).ToUpper());
+			await RespondAsync(string.Join(' ', text.LazySubstring(0, 1999).ToCharArray()).ToUpper());
 		}
 
-		[Command("fancy"), Summary("Regional indicator emojis.")]
-		public async Task Fancy([Remainder] string text)
+		[SlashCommand("fancy", "Regional indicator emojis.")]
+		public async Task Fancy(string text)
 		{
 			string build = "";
 
@@ -58,11 +58,11 @@ namespace Mayfly.Modules
 				}
 			}
 
-			await ReplyAsync(build.LazySubstring(0, 2000));
+			await RespondAsync(build.LazySubstring(0, 2000));
 		}
 
-		[Command("zalgo"), Summary("Creepypasta style text.")]
-		public async Task Zalgo([Remainder] string text)
+		[SlashCommand("zalgo", "Creepypasta style text.")]
+		public async Task Zalgo(string text)
 		{
 			string build = "";
 
@@ -76,7 +76,7 @@ namespace Mayfly.Modules
 				}
 			}
 
-			await ReplyAsync(build);
+			await RespondAsync(build);
 		}
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 
 namespace Mayfly.Services.Poll
@@ -63,10 +64,14 @@ namespace Mayfly.Services.Poll
 			}.Build();
 		}
 
-		public async Task Setup(ISocketMessageChannel channel)
+		public async Task Setup(SocketInteractionContext ctx)
 		{
 			this.endTime = DateTimeOffset.Now.AddMinutes(10);
-			this.Message = await channel.SendMessageAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", false, this.Build());
+			//this.Message = .SendMessageAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", false, this.Build());
+			
+			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: this.Build());
+			this.Message = await ctx.Interaction.GetOriginalResponseAsync();
+
 			await this.Message.AddReactionsAsync(this.Options.Keys.ToArray());
 		}
 

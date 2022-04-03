@@ -15,6 +15,7 @@ namespace Mayfly.Services.Trivia
 	{
 		private readonly HttpService http;
 		private ConcurrentDictionary<ulong, TriviaPlayer> Players = new ConcurrentDictionary<ulong, TriviaPlayer>();
+		private SocketInteraction interaction;
 		private readonly ISocketMessageChannel channel;
 		private IUserMessage message;
 		private bool waitingForPlayers = true;
@@ -48,16 +49,18 @@ namespace Mayfly.Services.Trivia
 		private readonly Dictionary<IEmote, string> answerDict = new Dictionary<IEmote, string>();
 		private int answered;
 
-		public TriviaSession(HttpService hs, ISocketMessageChannel channel, ulong host)
+		public TriviaSession(HttpService hs, SocketInteraction interaction, ISocketMessageChannel channel, ulong host)
 		{
 			this.http = hs;
+			this.interaction = interaction;
 			this.channel = channel;
 			this.host = host;
 		}
 
 		public async Task Setup(TriviaOptions options)
 		{
-			this.message = await this.channel.SendMessageAsync(null, false, presetEmbed);
+			await this.interaction.RespondAsync(embed: presetEmbed);
+			this.message = await this.interaction.GetOriginalResponseAsync();
 			this.trivia = await this.http.GetJsonAsync<TriviaResult>(options.Build());
 			
 			await this.message.AddReactionAsync(new Emoji("➕"));

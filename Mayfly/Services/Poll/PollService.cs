@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 
 namespace Mayfly.Services.Poll
@@ -36,7 +37,7 @@ namespace Mayfly.Services.Poll
 			}
 		}
 
-		public async Task<bool> Create(ISocketMessageChannel channel, string title, string[] args)
+		public async Task<bool> Create(SocketInteractionContext ctx, string title, string[] args)
 		{
 			if (args.Length is < 2 or > 20)
 			{
@@ -45,7 +46,7 @@ namespace Mayfly.Services.Poll
 			
 			Poll poll = new Poll(title, args);
 			
-			await poll.Setup(channel);
+			await poll.Setup(ctx);
 			this.pollData.Add(poll.Message.Id, poll);
 			
 			Task _ = Task.Delay(TimeSpan.FromMinutes(10)).ContinueWith(async _ =>

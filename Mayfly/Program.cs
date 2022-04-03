@@ -4,10 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Reflection;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Mayfly.Database;
-using Mayfly.Readers;
 using Mayfly.Services;
 using Mayfly.Services.Poll;
 using Mayfly.Services.Trivia;
@@ -17,6 +16,7 @@ using Lavalink4NET;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Logging;
 using Lavalink4NET.MemoryCache;
+using RunMode = Discord.Commands.RunMode;
 
 namespace Mayfly
 {
@@ -29,6 +29,15 @@ namespace Mayfly
 			await new Program().StartAsync();
 		}
 
+		private static bool InDevelopment()
+		{
+			#if DEBUG
+				return true;
+			#else
+				return false;
+			#endif
+		}
+
 		private static ServiceProvider ConfigureServices()
 		{
 			return new ServiceCollection()
@@ -39,12 +48,7 @@ namespace Mayfly
 					MessageCacheSize = 1000,
 					DefaultRetryMode = RetryMode.RetryRatelimit,
 				}))
-				.AddSingleton(new CommandService(new CommandServiceConfig()
-				{
-					CaseSensitiveCommands = false,
-					DefaultRunMode = RunMode.Async,
-					LogLevel = LogSeverity.Verbose
-				}))
+				.AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
 				.AddSingleton(JsonConvert.DeserializeObject<BotConfig>(File.ReadAllText("Config.json")))
 				
 				.AddDbContext<MayflyContext>()
@@ -53,7 +57,6 @@ namespace Mayfly
 				.AddSingleton<RateLimitService>()
 				.AddSingleton<EventService>()
 				.AddSingleton<PaginationService>()
-				.AddSingleton<HelpService>()
 				.AddSingleton<RandomService>()
 				.AddSingleton<RouletteService>()
 				.AddSingleton<AkinatorService>()
@@ -98,23 +101,33 @@ namespace Mayfly
 
 			ServiceProvider provider = ConfigureServices();
 			DiscordSocketClient client = provider.GetRequiredService<DiscordSocketClient>();
-			CommandService commands = provider.GetRequiredService<CommandService>();
+			InteractionService interaction = provider.GetRequiredService<InteractionService>();
 			BotConfig config = provider.GetRequiredService<BotConfig>();
 			MayflyContext context = provider.GetRequiredService<MayflyContext>();
 			IAudioService audio = provider.GetRequiredService<IAudioService>();
 
 			provider.GetRequiredService<EventService>();
-			commands.AddTypeReader(typeof(Color), new ColorReader());
 
 			await context.Database.EnsureCreatedAsync();
-			
-			await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+			await interaction.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 			await client.LoginAsync(TokenType.Bot, provider.GetRequiredService<BotConfig>().Token);
 			await client.SetGameAsync($"for {config.Prefix}help", null, ActivityType.Watching);
-
-			provider.GetRequiredService<HelpService>().Build();
+			
 			await client.StartAsync();
-			await audio.InitializeAsync();
+
+			client.Ready += async () =>
+			{
+				await audio.InitializeAsync();
+				
+				if (InDevelopment())
+				{
+					await interaction.RegisterCommandsToGuildAsync(config.DebugID);
+				}
+				else
+				{
+					await interaction.RegisterCommandsGloballyAsync();
+				}
+			};
 
 			try
 			{

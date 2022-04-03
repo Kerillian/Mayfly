@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Mayfly.Attributes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -14,20 +14,22 @@ using Mayfly.Services;
 using Mayfly.Structures;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using Image = SixLabors.ImageSharp.Image;
+using RuntimeResult = Discord.Interactions.RuntimeResult;
 
 namespace Mayfly.Modules
 {
-	public class ImageModule : MayflyModule
+	public class ImageModule : MayflyInteraction
 	{
 		public HttpService http { get; set; }
 		public RandomService random { get; set; }
 		public BotConfig config { get; set; }
 
-		[Command("oil"), Summary("Make anything art."), RateLimit(15)]
+		[SlashCommand("oil", "Make anything art.")]
 		public async Task<RuntimeResult> Oil(string url, [Range(1, 50)] int levels = 25, [Range(1, 50)] int size = 30)
 		{
+			await DeferAsync();
 			using Image image = await this.http.GetMediaAsync(url);
-			
+
 			if (image != null)
 			{
 				image.Mutate(x => x.OilPaint(levels, size));
@@ -36,28 +38,18 @@ namespace Mayfly.Modules
 				string ext = await image.SaveAsGifOrPngAsync(stream);
 				
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.ReplyFileAsync(stream, "oil" + ext);
 				
+				await this.FollowupWithFileAsync(stream, "oil" + ext);
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromError("LoadFailed", "Failed to load image.");
 		}
-
-		[Command("oil"), Summary("Make anything art."), RateLimit(15)]
-		public async Task<RuntimeResult> Oil([Range(1, 50)] int levels = 25, [Range(1, 50)] int size = 30)
+		
+		[SlashCommand("corrupt", "Corrupt jpeg image data."), ]
+		public async Task<RuntimeResult> Corrupt(string url, [MinValue(5), MaxValue(100)] int iterations = 25)
 		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Oil(url, levels, size);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
-		}
-
-		[Command("corrupt"), Alias("glitch"), Summary("Corrupt jpeg image data.")]
-		public async Task<RuntimeResult> Corrupt(string url, [Range(5, 100)] int Iterations = 25)
-		{
+			await DeferAsync();
 			using Image<Rgba32> image = await this.http.GetImageAsync<Rgba32>(url);
 			
 			if (image != null)
@@ -76,13 +68,13 @@ namespace Mayfly.Modules
 					}
 				}
 
-				for (int i = 0; i < Iterations; i++)
+				for (int i = 0; i < iterations; i++)
 				{
 					buffer[this.random.Next(header + 4, buffer.Length)] = 0x00;
 				}
 
 				await using MemoryStream corruptedStream = new MemoryStream(buffer);
-				await this.ReplyFileAsync(corruptedStream, "corrupted.jpg");
+				await this.FollowupWithFileAsync(corruptedStream, "corrupted.jpg");
 			}
 			else
 			{
@@ -91,21 +83,11 @@ namespace Mayfly.Modules
 			
 			return MayflyResult.FromSuccess();
 		}
-	
-		[Command("corrupt"), Alias("glitch"), Summary("Corrupt jpeg image data.")]
-		public async Task<RuntimeResult> Corrupt([Range(5, 100)] int iterations = 25)
-		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Corrupt(url, iterations);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
-		}
 		
-		[Command("crush"), Summary("Crushes the image resolution.")]
-		public async Task<RuntimeResult> Crush(string url, [Range(0f, 1f)] float scale = 0.5f, [Range(1, 100)] int quality = 10)
+		[SlashCommand("crush", "Crushes the image resolution.")]
+		public async Task<RuntimeResult> Crush(string url, [MinValue(0), MaxValue(1)] float scale = 0.5f, [MinValue(1), MaxValue(100)] int quality = 10)
 		{
+			await DeferAsync();
 			using Image image = await this.http.GetMediaAsync(url);
 			
 			if (image != null)
@@ -123,23 +105,12 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.ReplyFileAsync(stream, "crushed" + ext);
+				await this.FollowupWithFileAsync(stream, "crushed" + ext);
 				
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromUserError("LoadFailed", "Failed to load image.");
-		}
-
-		[Command("crush"), Summary("Crushes the image resolution.")]
-		public async Task<RuntimeResult> Crush()
-		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Crush(url);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
 		}
 
 		private void ColorFuckWorker(Image<Rgba32> image)
@@ -155,11 +126,13 @@ namespace Mayfly.Modules
 				}
 			}
 		}
-
-		[Command("shift"), Summary("Messes with image color channels.")]
+		
+		[SlashCommand("shift", "Bitshift image color channels.")]
 		public async Task<RuntimeResult> Shift(string url)
 		{
+			await DeferAsync();
 			using Image<Rgba32> image = await this.http.GetImageAsync<Rgba32>(url);
+			
 			if (image != null)
 			{
 				this.ColorFuckWorker(image);
@@ -171,7 +144,7 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.ReplyFileAsync(stream, "shifted.jpg");
+				await this.FollowupWithFileAsync(stream, "shifted.jpg");
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -179,21 +152,12 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("InvalidUrl", "Url provided by user is invalid.");
 		}
 
-		[Command("shift"), Summary("Messes with image color channels.")]
-		public async Task<RuntimeResult> Shift()
-		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Shift(url);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
-		}
-
-		[Command("shuffle"), Summary("Shuffle gif frames.")]
+		[SlashCommand("shuffle", "Shuffle gif frames.")]
 		public async Task<RuntimeResult> Shuffle(string url)
 		{
+			await DeferAsync();
 			using Image<Rgb24> image = await this.http.GetGifAsync<Rgb24>(url);
+			
 			if (image != null)
 			{
 				int frames = image.Frames.Count;
@@ -207,28 +171,18 @@ namespace Mayfly.Modules
 				await image.SaveAsGifAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.ReplyFileAsync(stream, "shuffled.gif");
+				await this.FollowupWithFileAsync(stream, "shuffled.gif");
 
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromUserError("LoadFailed", "Failed to load image.");
 		}
-
-		[Command("shuffle"), Summary("Shuffle gif frames.")]
-		public async Task<RuntimeResult> Shuffle()
-		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Shuffle(url);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
-		}
-
-		[Command("obama"), Summary("Obama watching TV.")]
+		
+		[SlashCommand("obama", "Obama watching TV.")]
 		public async Task<RuntimeResult> Obama(string url)
 		{
+			await DeferAsync();
 			using Image<Rgba32> tvImage = await this.http.GetImageAsync<Rgba32>(url);
 			using Image<Rgba32> obamaImage = Image.Load<Rgba32>("./Media/obama.png");
 			
@@ -254,28 +208,18 @@ namespace Mayfly.Modules
 				await obamaImage.SaveAsJpegAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.ReplyFileAsync(stream, "test.jpg");
+				await this.FollowupWithFileAsync(stream, "test.jpg");
 				
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromError("LoadFailed", "Failed to load image.");
 		}
-
-		[Command("obama"), Summary("Obama watching TV.")]
-		public async Task<RuntimeResult> Obama()
-		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Obama(url);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
-		}
-
-		[Command("jar"), Summary("Jar somebody.")]
+		
+		[SlashCommand("jar", "Jar somebody.")]
 		public async Task<RuntimeResult> Jar(IUser user)
 		{
+			await DeferAsync();
 			using Image<Rgba32> avatarImage = await this.http.GetImageAsync<Rgba32>(user.GetAvatarUrl());
 			using Image<Rgba32> jarImage = Image.Load<Rgba32>("./Media/jar.png");
 			using Image<Rgba32> baseImage = new Image<Rgba32>(jarImage.Width, jarImage.Height);
@@ -304,7 +248,7 @@ namespace Mayfly.Modules
 				await baseImage.SaveAsPngAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.ReplyFileAsync(stream, "jar.png");
+				await this.FollowupWithFileAsync(stream, "jar.png");
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -312,9 +256,16 @@ namespace Mayfly.Modules
 			return MayflyResult.FromError("LoadFailed", "Failed to load image.");
 		}
 
-		[Command("deepfry"), Summary("Deepfry images.")]
+		[UserCommand("jar")]
+		public async Task JarUser(IUser user)
+		{
+			await Jar(user);
+		}
+		
+		[SlashCommand("deepfry", "Deepfry images.")]
 		private async Task<RuntimeResult> Deepfry(string url)
 		{
+			await DeferAsync();
 			using Image image = await this.http.GetMediaAsync(url);
 
 			if (image != null)
@@ -338,28 +289,18 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.ReplyFileAsync(stream, "fried" + ext);
+				await this.FollowupWithFileAsync(stream, "fried" + ext);
 				
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromError("LoadFailed", "Failed to load image.");
 		}
-
-		[Command("deepfry"), Summary("Deepfry images.")]
-		private async Task<RuntimeResult> Deepfry()
+		
+		[SlashCommand("ocr", "Get text inside image.")]
+		public async Task<RuntimeResult> OCR(string url)
 		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.Deepfry(url);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
-		}
-
-		[Command("ocr"), Summary("Get text inside image.")]
-		public async Task<RuntimeResult> OCR(string url = "")
-		{
+			await DeferAsync();
 			OCRSpaceResult ocr = await http.GetJsonAsync<OCRSpaceResult>($"https://api.ocr.space/parse/imageurl?apikey={config.OCRSpaceKey}&url={url}");
 
 			if (ocr is not null)
@@ -371,23 +312,12 @@ namespace Mayfly.Modules
 					builder.AppendLine(result.ParsedText);
 				}
 				
-				await ReplyCodeAsync(builder.ToString());
+				await FollowupWithCodeAsync(builder.ToString());
 				
 				return MayflyResult.FromSuccess();
 			}
 			
 			return MayflyResult.FromError("NoText", "Unable to find text in that image.");
-		}
-
-		[Command("ocr"), Summary("Get text inside image.")]
-		public async Task<RuntimeResult> OCR()
-		{
-			if (TryGetAttachmentUrl(out string url))
-			{
-				return await this.OCR(url);
-			}
-
-			return MayflyResult.FromUserError("InvalidAttachment", "Attachment provided by user is invalid.");
 		}
 	}
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Lavalink4NET;
 using Lavalink4NET.Logging;
@@ -11,30 +11,28 @@ namespace Mayfly.Services
 	public class EventService
 	{
 		private readonly DiscordSocketClient client;
-		private readonly CommandService commandService;
-		private readonly HelpService help;
+		private readonly InteractionService interaction;
 		private readonly BotConfig config;
 		private readonly DatabaseService database;
 		private readonly IAudioService audio;
 		private readonly ILogger logger;
 		private readonly IServiceProvider provider;
 
-		public EventService(DiscordSocketClient dsc, CommandService cs, HelpService hs, BotConfig bc, DatabaseService db, IAudioService ias, ILogger il, IServiceProvider isp)
+		public EventService(DiscordSocketClient dsc, InteractionService @is, BotConfig bc, DatabaseService db, IAudioService ias, ILogger il, IServiceProvider isp)
 		{
 			this.client = dsc;
-			this.commandService = cs;
-			this.help = hs;
+			this.interaction = @is;
 			this.config = bc;
 			this.database = db;
 			this.audio = ias;
 			this.logger = il;
 			this.provider = isp;
-
-			this.client.MessageReceived += HandleMessage;
-			this.commandService.CommandExecuted += HandleExecution;
+			
+			this.client.InteractionCreated += HandleInteraction;
+			this.interaction.SlashCommandExecuted += HandleExecution;
+			this.interaction.Log += OnLogAsync;
 
 			this.client.Log += OnLogAsync;
-			this.commandService.Log += OnLogAsync;
 
 			if (logger is EventLogger log)
 			{
@@ -42,7 +40,7 @@ namespace Mayfly.Services
 			}
 		}
 
-		private async Task HandleExecution(Optional<CommandInfo> info, ICommandContext context, IResult result)
+		private async Task HandleExecution(SlashCommandInfo info, IInteractionContext context, IResult result)
 		{
 			if (context.Channel is ISocketMessageChannel channel)
 			{
@@ -57,84 +55,60 @@ namespace Mayfly.Services
 					return;
 				}
 
-				if (result is MayflyResult mResult)
+				Embed embed;
+				if (result is MayflyResult { Error: InteractionCommandError.Exception or InteractionCommandError.Unsuccessful } mResult)
 				{
-					switch (mResult.Error)
+					embed = new EmbedBuilder()
 					{
-						case CommandError.Exception:
-							await channel.SendMessageAsync(embed: new EmbedBuilder()
-							{
-								Title = "Error: " + mResult.Reason,
-								Color = Color.Red,
-								Description = mResult.Message
-							}.Build());
-							break;
-						
-						case CommandError.ParseFailed:
-							await channel.SendMessageAsync(embed: new EmbedBuilder()
-							{
-								Title = "Parse Failed: " + mResult.Reason,
-								Color = Color.Red,
-								Description = info.IsSpecified
-									? mResult.Message + "\n" + Format.Code(help.GetCommandHelp(info.Value), "cs")
-									: mResult.Message
-							}.Build());
-							break;
+						Title = "Error: " + mResult.ErrorReason,
+						Color = Color.Red,
+						Description = mResult.Message
+					}.Build();
+
+					if (context.Interaction.HasResponded)
+					{
+						await context.Interaction.FollowupAsync(embed: embed, ephemeral: true);
 					}
-					
+					else
+					{
+						await context.Interaction.RespondAsync(embed: embed, ephemeral: true);
+					}
+
 					return;
 				}
 
-				switch (result.Error)
+				embed = new EmbedBuilder()
 				{
-					case CommandError.ParseFailed or CommandError.BadArgCount:
-						await channel.SendMessageAsync(embed: new EmbedBuilder()
-						{
-							Title = "Error: " + result.Error,
-							Color = Color.Red,
-							Description = info.IsSpecified
-								? result.ErrorReason + "\n" + Format.Code(help.GetCommandHelp(info.Value), "cs")
-								: result.ErrorReason
-						}.Build());
-						break;
-
-					case CommandError.UnknownCommand:
-						await context.Message.AddReactionAsync(new Emoji("❌"));
-						break;
-				
-					default:
-						string reason = result.ErrorReason ?? "Something broke.";
+					Title = "Error: " + (result.Error?.ToString() ?? "Oof"),
+					Color = Color.Red,
+					Description = result.ErrorReason ?? "Something broke."
+				}.Build();
 						
-						/*
-						 * Yes, the grammar bothered me this much.
-						 */
-						if (reason == "This command may only be invoked in an NSFW channel.")
-						{
-							reason = "This command may only be invoked in a NSFW channel.";
-						}
-
-						await channel.SendMessageAsync(embed: new EmbedBuilder()
-						{
-							Title = "Error: " + (result.Error?.ToString() ?? "Oof"),
-							Color = Color.Red,
-							Description = reason
-						}.Build());
-						
-						break;
+				if (context.Interaction.HasResponded)
+				{
+					await context.Interaction.FollowupAsync(embed: embed, ephemeral: true);
+				}
+				else
+				{
+					await context.Interaction.RespondAsync(embed: embed, ephemeral: true);
 				}
 			}
 		}
 
-		private async Task HandleMessage(SocketMessage message)
+		private async Task HandleInteraction(SocketInteraction si)
 		{
-			if (message is SocketUserMessage msg && !msg.Author.IsBot && message.Channel is SocketGuildChannel)
+			try
 			{
-				SocketCommandContext context = new SocketCommandContext(client, msg);
-				int argPos = 0;
+				SocketInteractionContext ctx = new SocketInteractionContext(client, si);
+				await interaction.ExecuteCommandAsync(ctx, provider);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
 
-				if (msg.HasStringPrefix(config.Prefix, ref argPos))
+				if(si.Type == InteractionType.ApplicationCommand)
 				{
-					await commandService.ExecuteAsync(context, argPos, provider);
+					await si.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
 				}
 			}
 		}

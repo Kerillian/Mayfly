@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using Discord;
 using Discord.WebSocket;
 using Discord.Commands;
+using Discord.Interactions;
 
 namespace Mayfly.Services.Trivia
 {
@@ -39,11 +40,11 @@ namespace Mayfly.Services.Trivia
 			return Task.CompletedTask;
 		}
 
-		public async Task<bool> NewSession(SocketCommandContext ctx, TriviaOptions options)
+		public async Task<bool> NewSession(SocketInteractionContext ctx, TriviaOptions options)
 		{
 			if (!this.sessions.ContainsKey(ctx.Guild.Id))
 			{
-				TriviaSession session = new TriviaSession(this.http, ctx.Channel, ctx.User.Id);
+				TriviaSession session = new TriviaSession(this.http, ctx.Interaction, ctx.Channel, ctx.User.Id);
 				this.sessions.TryAdd(ctx.Guild.Id, session);
 				await session.Setup(options);
 				await session.StartTimeout();

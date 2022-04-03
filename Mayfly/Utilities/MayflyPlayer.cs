@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.Rest;
 using Discord.WebSocket;
 using Lavalink4NET;
@@ -13,6 +14,7 @@ namespace Mayfly.Utilities
 	{
 		public IUser User { get; }
 		public ISocketMessageChannel Channel { get; }
+		public IDiscordInteraction Interaction { get; set; }
 
 		public QueueInfo(IUser user, ISocketMessageChannel channel)
 		{
@@ -29,7 +31,14 @@ namespace Mayfly.Utilities
 		{
 			if (State == PlayerState.Playing && CurrentTrack?.Context is QueueInfo info)
 			{
-				lastId = (await info.Channel.SendMessageAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
+				if (info.Interaction != null)
+				{
+					lastId = (await info.Interaction.FollowupAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
+				}
+				else
+				{
+					lastId = (await info.Channel.SendMessageAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
+				}
 			}
 			
 			await base.OnTrackStartedAsync(e);

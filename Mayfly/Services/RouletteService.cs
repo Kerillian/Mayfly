@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Mayfly.Extensions;
 
@@ -44,7 +45,7 @@ namespace Mayfly.Services
 			}
 		}
 
-		public async Task Next(SocketCommandContext context)
+		public async Task Next(SocketInteractionContext context)
 		{
 			if (context.User is not SocketGuildUser user)
 			{
@@ -82,29 +83,29 @@ namespace Mayfly.Services
 							}
 							catch
 							{
-								await context.Channel.SendMessageAsync(embed: whizEmbed);
+								await context.Interaction.RespondAsync(embed: whizEmbed);
 							}
 						}
 						else
 						{
-							await context.Channel.SendMessageAsync(embed: whizEmbed);
+							await context.Interaction.RespondAsync(embed: whizEmbed);
 						}
 					}
 					else
 					{
-						await context.Channel.SendMessageAsync(embed: whizEmbed);
+						await context.Interaction.RespondAsync(embed: whizEmbed);
 					}
 				}
 				catch
 				{
-					await context.Channel.SendMessageAsync(embed: whizEmbed);
+					await context.Interaction.RespondAsync(embed: whizEmbed);
 				}
 
 				this.clients.TryRemove(context.Channel.Id, out RouletteClient _);
 				return;
 			}
 
-			await context.Channel.SendMessageAsync("", false, this.clickEmbed);
+			await context.Interaction.RespondAsync(embed: this.clickEmbed);
 
 			if (++client.CurrentChamber > 6)
 			{

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Mayfly.Extensions;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Lavalink4NET;
 using Lavalink4NET.Filters;
@@ -16,8 +16,8 @@ using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
-	[RequireContext(ContextType.Guild), Group("music"), Alias("m"), Summary("Music Module")]
-	public class AudioModule : MayflyModule
+	[RequireContext(ContextType.Guild), Group("music", "Music stuff.")]
+	public class AudioModule : MayflyInteraction
 	{
 		public IAudioService LavaNode { private get; set; }
 		public PaginationService Pagination { private get; set; }
@@ -78,8 +78,8 @@ namespace Mayfly.Modules
 			return track?.Context is QueueInfo info && info.User.Id == Context.User.Id;
 		}
 
-		[Command("play"), Summary("Play music in discord.")]
-		public async Task<RuntimeResult> Play([Remainder] string query)
+		[SlashCommand("play", "Play music in discord.")]
+		public async Task<RuntimeResult> Play(string query)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer(true);
 
@@ -87,6 +87,8 @@ namespace Mayfly.Modules
 			{
 				return result;
 			}
+
+			await DeferAsync();
 
 			LavalinkTrack track = null;
 
@@ -110,19 +112,25 @@ namespace Mayfly.Modules
 				}
 			}
 			
-			track.Context = new QueueInfo(Context.User, Context.Channel);
+			QueueInfo info = new QueueInfo(Context.User, Context.Channel);
+			track.Context = info;
 			
 			if (await player.PlayAsync(track, true) > 0)
 			{
-				await ReplyAsync(embed: await track.GetEmbedAsync("Queued"));
+				await FollowupAsync(embed: await track.GetEmbedAsync("Queued"));
+			}
+			else
+			{
+				info.Interaction = Context.Interaction;
 			}
 
 			return MayflyResult.FromSuccess();
 		}
 		
-		[Command("moe"), Summary("Queue listen.moe.")]
+		[SlashCommand("moe", "Queue listen.moe.")]
 		public async Task<RuntimeResult> Moe()
 		{
+			await DeferAsync();
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 
 			if (result is not null)
@@ -137,17 +145,22 @@ namespace Mayfly.Modules
 				return MayflyResult.FromError("NoTrack", "Failed to load listen.moe, sorry.");
 			}
 
-			track.Context = new QueueInfo(Context.User, Context.Channel);
+			QueueInfo info = new QueueInfo(Context.User, Context.Channel);
+			track.Context = info;
 
 			if (await player.PlayAsync(track, true) > 0)
 			{
-				await ReplyAsync(embed: await track.GetEmbedAsync("Queued"));
+				await FollowupAsync(embed: await track.GetEmbedAsync("Queued"));
+			}
+			else
+			{
+				info.Interaction = Context.Interaction;
 			}
 
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("skip"), Summary("Vote to skip the next song.")]
+		[SlashCommand("skip", "Vote to skip the next song.")]
 		public async Task<RuntimeResult> Skip()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -160,6 +173,7 @@ namespace Mayfly.Modules
 			if (IsAdmin() || IsDJ() || IsRequester(player.CurrentTrack))
 			{
 				await player.SkipAsync();
+				await RespondAsync($"{Context.User.Mention} has skipped the song.");
 			}
 			else
 			{
@@ -167,14 +181,14 @@ namespace Mayfly.Modules
 
 				if (info.WasAdded)
 				{
-					await ReplyAsync($"{Context.User.Mention} has voted to skip the current track. ({info.Percentage:P})");
+					await RespondAsync($"{Context.User.Mention} has voted to skip the current track. ({info.Percentage:P})");
 				}
 			}
 			
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("seek"), Summary("Seek in track position.")]
+		[SlashCommand("seek", "Seek in track position.")]
 		public async Task<RuntimeResult> Seek(TimeSpan time)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -194,10 +208,12 @@ namespace Mayfly.Modules
 				if (time > player.CurrentTrack.Duration)
 				{
 					await player.SkipAsync();
+					await RespondAsync("Seeking beyond track length. Skipping.");
 				}
 				else
 				{
 					await player.SeekPositionAsync(time);
+					await RespondAsync($"Seeking to: `{time}`");
 				}
 				
 				return MayflyResult.FromSuccess();
@@ -206,7 +222,7 @@ namespace Mayfly.Modules
 			return MayflyResult.FromError("NotSeekable", "This track can't be seeked.");
 		}
 
-		[Command("pause"), Alias("resume", "unpause"), Summary("Pause/Unpause the track.")]
+		[SlashCommand("pause", "Pause/Unpause the track.")]
 		public async Task<RuntimeResult> Pause()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -224,16 +240,18 @@ namespace Mayfly.Modules
 			if (player.State == PlayerState.Paused)
 			{
 				await player.ResumeAsync();
+				await RespondAsync("Resumed track.");
 			}
 			else
 			{
-				await player.ResumeAsync();
+				await player.PauseAsync();
+				await RespondAsync("Paused track.");
 			}
 			
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("stop"), Alias("cya", "leave", "die"), Summary("Stop playing and leave.")]
+		[SlashCommand("stop", "Stop playing and leave.")]
 		public async Task<RuntimeResult> Stop()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -247,44 +265,52 @@ namespace Mayfly.Modules
 			{
 				await player.StopAsync();
 				await player.DisconnectAsync();
+				await RespondAsync("Cya.");
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromError("NotPermissible", "You can't stop this player.");
 		}
 
-		[Command("queue"), Alias("q"), Summary("List track queue.")]
+		[SlashCommand("queue", "List track queue.")]
 		public async Task<RuntimeResult> Queue()
 		{
-			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
+			try
+			{
+				(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 
-			if (result is not null)
+				if (result is not null)
+				{
+					return result;
+				}
+
+				if (player.Queue.IsEmpty)
+				{
+					await RespondAsync(embed: new EmbedBuilder()
+					{
+						Title = "Queue",
+						Description = "_... empty ..._",
+						Color = Color.Red
+					}.Build());
+				}
+				else
+				{
+					await Pagination.SendMessageAsync(Context, new PaginatedMessage(player.GetQueuePaged(20).Select(x => new EmbedBuilder().WithDescription($"```cs\n{x}\n```")), null, Color.DarkGreen, Context.User, new AppearanceOptions()
+					{
+						Timeout = TimeSpan.FromMinutes(5),
+						Style = DisplayStyle.Full
+					}));
+				}
+			}
+			catch (Exception e)
 			{
-				return result;
+				Console.WriteLine(e);
 			}
 
-			if (player.Queue.IsEmpty)
-			{
-				await ReplyAsync(embed: new EmbedBuilder()
-				{
-					Title = "Queue",
-					Description = "_... empty ..._",
-					Color = Color.Red
-				}.Build());
-			}
-			else
-			{
-				await Pagination.SendMessageAsync(Context.Channel, new PaginatedMessage(player.GetQueuePaged(20).Select(x => new EmbedBuilder().WithDescription($"```cs\n{x}\n```")), null, Color.DarkGreen, Context.User, new AppearanceOptions()
-				{
-					Timeout = TimeSpan.FromMinutes(5),
-					Style = DisplayStyle.Full
-				}));
-			}
-			
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("clear"), Summary("Clear track queue.")]
+		[SlashCommand("clear", "Clear track queue.")]
 		public async Task<RuntimeResult> ClearQueue()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -300,12 +326,12 @@ namespace Mayfly.Modules
 			}
 			
 			player.Queue.Clear();
-			await ReplyAsync("Cleared the queue.");
+			await RespondAsync("Cleared the queue.");
 			
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("remove"), Summary("Remove track from queue.")]
+		[SlashCommand("remove", "Remove track from queue.")]
 		public async Task<RuntimeResult> Remove(int index)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -327,13 +353,13 @@ namespace Mayfly.Modules
 				return MayflyResult.FromError("NotPermissible", "You can't remove that track from the queue.");
 			}
 
-			await ReplyAsync(embed: await track.GetEmbedAsync("Removed"));
+			await RespondAsync(embed: await track.GetEmbedAsync("Removed"));
 			player.Queue.RemoveAt(index);
 			
 			return MayflyResult.FromSuccess();
 		}
 		
-		[Command("shuffle"), Summary("Shuffle track queue.")]
+		[SlashCommand("shuffle", "Shuffle track queue.")]
 		public async Task<RuntimeResult> Shuffle()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -349,12 +375,12 @@ namespace Mayfly.Modules
 			}
 			
 			player.Queue.Shuffle();
-			await ReplyToAsync("Shuffled.");
+			await RespondAsync("Shuffled.");
 			
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("random"), Summary("Play a random track in the queue.")]
+		[SlashCommand("random", "Play a random track in the queue.")]
 		public async Task<RuntimeResult> Random()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -377,11 +403,12 @@ namespace Mayfly.Modules
 			LavalinkTrack track = player.Queue[RandomService.Next(0, player.Queue.Count - 1)];
 
 			await player.PlayTopAsync(track);
+			await RespondAsync(embed: await track.GetEmbedAsync());
 
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("track"), Alias("np"), Summary("Currently playing track.")]
+		[SlashCommand("track", "Currently playing track.")]
 		public async Task<RuntimeResult> Track()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -396,11 +423,11 @@ namespace Mayfly.Modules
 				return MayflyResult.FromError("NoTrack", "Nothing is currently playing.");
 			}
 
-			await ReplyAsync(embed: await player.CurrentTrack.GetEmbedAsync());
+			await RespondAsync(embed: await player.CurrentTrack.GetEmbedAsync());
 			return MayflyResult.FromSuccess();
 		}
 		
-		[Command("reset"), Summary("Reset all audio effects.")]
+		[SlashCommand("reset", "Reset all audio effects.")]
 		public async Task<RuntimeResult> Reset()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -427,10 +454,11 @@ namespace Mayfly.Modules
 			player.Filters.LowPass = null;
 
 			await player.Filters.CommitAsync();
+			await RespondAsync("Reset filters.");
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("boost"), Summary("Boost the lower band range.")]
+		[SlashCommand("boost", "Boost the lower band range.")]
 		public async Task<RuntimeResult> Boost([Range(-0.25f, 1.0f)] float amount = 1)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -451,10 +479,11 @@ namespace Mayfly.Modules
 			};
 
 			await player.Filters.CommitAsync(true);
+			await RespondAsync("Boosting lower band.");
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("bend"), Summary("Randomize the audio bands.")]
+		[SlashCommand("bend", "Randomize the audio bands.")]
 		public async Task<RuntimeResult> Bend()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -475,10 +504,11 @@ namespace Mayfly.Modules
 			};
 
 			await player.Filters.CommitAsync();
+			await RespondAsync("Randomizing the audio bands.");
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("vibrato"), Summary("Reset all audio bands.")]
+		[SlashCommand("vibrato", "Wavy funny.")]
 		public async Task<RuntimeResult> Vibrato([Range(5.0f, 14.0f)] float strength = 5)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -500,10 +530,11 @@ namespace Mayfly.Modules
 			};
 
 			await player.Filters.CommitAsync();
+			await RespondAsync("Wavy time.");
 			return MayflyResult.FromSuccess();
 		}
 		
-		[Command("nuke"), Summary("Random distortion™")]
+		[SlashCommand("nuke", "Random distortion™")]
 		public async Task<RuntimeResult> Nuke()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -531,10 +562,11 @@ namespace Mayfly.Modules
 			};
 			
 			await player.Filters.CommitAsync();
+			await RespondAsync("Applying Random distortion™");
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("rape"), Summary("CBT for your ears.")]
+		[SlashCommand("rape", "CBT for your ears.")]
 		public async Task<RuntimeResult> Rape([Range(2f, 10f)] float pain = 3)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -566,10 +598,11 @@ namespace Mayfly.Modules
 			};
 			
 			await player.Filters.CommitAsync();
+			await RespondAsync("I'm sorry.");
 			return MayflyResult.FromSuccess();
 		}
 
-		[Command("vaporwave"), Summary("Crackhead energy.")]
+		[SlashCommand("vaporwave", "Crackhead energy.")]
 		public async Task<RuntimeResult> Vaporwave()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -592,10 +625,11 @@ namespace Mayfly.Modules
 			};
 
 			await player.Filters.CommitAsync();
+			await RespondAsync("You probably drink lean, don't you.");
 			return MayflyResult.FromSuccess();
 		}
 		
-		[Command("nightcore"), Summary("Relive 2010 YouTube.")]
+		[SlashCommand("nightcore", "Relive 2010 YouTube.")]
 		public async Task<RuntimeResult> Nightcore()
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
@@ -618,6 +652,7 @@ namespace Mayfly.Modules
 			};
 			
 			await player.Filters.CommitAsync();
+			await RespondAsync("Time traveling...");
 			return MayflyResult.FromSuccess();
 		}
 	}

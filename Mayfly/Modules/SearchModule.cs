@@ -6,14 +6,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Mayfly.Services;
 using Mayfly.Structures;
 using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
-	public class SearchModule : MayflyModule
+	public class SearchModule : MayflyInteraction
 	{
 		public HttpService Http { get; set; }
 		public PaginationService Pagination { get; set; }
@@ -21,9 +21,10 @@ namespace Mayfly.Modules
 
 		private static readonly Regex ReferenceBlockPattern = new Regex(@"\[([^\[\]]+)\]", RegexOptions.Multiline | RegexOptions.Compiled);
 
-		[Command("define"), Summary("Defines a word using Urban Dictionary.")]
-		public async Task Define([Remainder] string word)
+		[SlashCommand("define", "Defines a word using Urban Dictionary.")]
+		public async Task<RuntimeResult> Define(string word)
 		{
+			await DeferAsync();
 			UrbanResult json = await Http.GetJsonAsync<UrbanResult>($"http://api.urbandictionary.com/v0/define?term={Uri.EscapeDataString(word)}");
 
 			if (json != null)
@@ -46,7 +47,7 @@ namespace Mayfly.Modules
 					definition = definition.Substring(0, 2048 - RM.Length) + RM;
 				}
 
-				await ReplyAsync("", false, new EmbedBuilder()
+				await FollowupAsync(embed: new EmbedBuilder()
 				{
 					Title = json.List[0].Word,
 					Color = new Color(0xD23725),
@@ -59,61 +60,74 @@ namespace Mayfly.Modules
 						IconUrl = "https://i.imgur.com/wg2ISw5.png"
 					}
 				}.Build());
+				
+				return MayflyResult.FromSuccess();
 			}
+			
+			return MayflyResult.FromError("QueryFailed", "Could not find a definition for that word.");
 		}
 
-		[Command("mal"), Alias("anime"), Summary("Search my anime list.")]
-		public async Task MyAnimeList([Remainder] string query)
+		[SlashCommand("mal", "Search my anime list.")]
+		public async Task MyAnimeList(string query)
 		{
+			await DeferAsync();
 			MalRoot data = await Http.GetJsonAsync<MalRoot>($"https://api.jikan.moe/v3/search/anime?q={Uri.EscapeDataString(query)}");
 
 			if (data != null)
 			{
 				IEnumerable<EmbedBuilder> builders = data.Results.Select(x => new EmbedBuilder().WithTitle(x.Title).WithDescription(x.Synopsis).WithThumbnailUrl(x.ImageUrl).WithUrl(x.Url));
 
-				await Pagination.SendMessageAsync(Context.Channel, new PaginatedMessage(builders, null, Color.Green, Context.User, new AppearanceOptions()
+				await Pagination.SendMessageAsync(Context, new PaginatedMessage(builders, null, Color.Green, Context.User, new AppearanceOptions()
 				{
 					Timeout = TimeSpan.FromMinutes(3),
 					Style = DisplayStyle.Selector
-				}));
+				}), true);
 			}
 		}
 
-		[Command("trace"), Summary("Trace.moe in discord.")]
+		[SlashCommand("trace", "Trace.moe in discord.")]
 		public async Task<RuntimeResult> TraceMoe(string url)
 		{
-			TraceMoeResult json = await Http.GetJsonAsync<TraceMoeResult>("https://trace.moe/api/search?url=" + Uri.EscapeDataString(url));
+			await DeferAsync();
+			TraceMoeResponse json = await Http.GetJsonAsync<TraceMoeResponse>("https://api.trace.moe/search?anilistInfo&url=" + Uri.EscapeDataString(url));
 			
-			if (json is {Docs.Count: > 0})
+			if (json is {Results.Count: > 0})
 			{
-				IEnumerable<EmbedBuilder> builders = json.Docs.Select(x => new EmbedBuilder().WithTitle(x.Title).WithDescription(x.TitleEnglish).WithThumbnailUrl(x.ImageThumbnail));
+				IEnumerable<EmbedBuilder> builders = json.Results.Select(x => new EmbedBuilder().WithTitle(x.Info.Title.Native).WithDescription(x.Info.Title.English));
 				
-				await Pagination.SendMessageAsync(Context.Channel, new PaginatedMessage(builders, null, Color.Green, Context.User, new AppearanceOptions()
+				await Pagination.SendMessageAsync(Context, new PaginatedMessage(builders, null, Color.Green, Context.User, new AppearanceOptions()
 				{
 					Timeout = TimeSpan.FromMinutes(3),
 					Style = DisplayStyle.Selector
-				}));
+				}), true);
 				
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromError("NothingFound", "Couldn't find anything for that, sorry.");
 		}
-
-		[Command("trace"), Summary("Trace.moe in discord.")]
-		public async Task<RuntimeResult> TraceMoe()
+		
+		[MessageCommand("trace")]
+		public async Task<RuntimeResult> TraceMoe(IMessage msg)
 		{
-			if (TryGetAttachmentUrl(out string url))
+			if (msg.Attachments.Any())
 			{
-				return await this.TraceMoe(url);
+				foreach (IAttachment attachment in msg.Attachments)
+				{
+					if (attachment.Width.HasValue || attachment.Height.HasValue)
+					{
+						return await TraceMoe(attachment.Url);
+					}
+				}
 			}
-
-			return MayflyResult.FromError("InvalidAttachment", "Attachment provided by user is invalid.");
+			
+			return MayflyResult.FromUserError("NoAttachment", "No attachment found in that message.");
 		}
 
-		[Command("mc"), Summary("Get minecraft profile info.")]
+		[SlashCommand("mc", "Get minecraft profile info.")]
 		public async Task<RuntimeResult> MCName(string username)
 		{
+			await DeferAsync();
 			MinecraftProfile profile = await Http.GetJsonAsync<MinecraftProfile>($"https://api.mojang.com/users/profiles/minecraft/{Uri.EscapeDataString(username)}");
 
 			if (profile is not null)
@@ -137,16 +151,17 @@ namespace Mayfly.Modules
 					}
 				}
 
-				await ReplyAsync("", false, builder.Build());
+				await FollowupAsync(embed: builder.Build());
 				return MayflyResult.FromSuccess();
 			}
 
 			return MayflyResult.FromError("InvalidUsername", "Provided username was not found.");
 		}
 
-		[Command("steamid"), Summary("SteamID resolver.")]
+		[SlashCommand("steamid", "SteamID resolver.")]
 		public async Task<RuntimeResult> SteamIDResolver(string id)
 		{
+			await DeferAsync();
 			SteamProfile profile = await Steam.GetSteamID(id);
 
 			if (profile.Valid)
@@ -158,7 +173,7 @@ namespace Mayfly.Modules
 				builder.AppendLine("SteamID64 : " + profile.SteamId64);
 				builder.AppendLine("Aliases   : " + (profile.Aliases != null ? string.Join(", ", profile.Aliases) : "None"));
 				
-				await this.ReplyAsync("", false, new EmbedBuilder()
+				await this.FollowupAsync(embed: new EmbedBuilder()
 				{
 					Title = profile.Username,
 					Description = Format.Code(builder.ToString()),
@@ -173,9 +188,10 @@ namespace Mayfly.Modules
 			return MayflyResult.FromError("ResolverFailure", "Failed to resolve SteamID.");
 		}
 
-		[Command("pwned"), Summary("https://haveibeenpwned.com/Passwords")]
-		public async Task Pwned([Remainder] string password)
+		[SlashCommand("pwned", "https://haveibeenpwned.com/Passwords")]
+		public async Task Pwned(string password)
 		{
+			await DeferAsync();
 			string hash = HashUtility.Sha1(password);
 			string start = hash[..5];
 			int times = 0;
@@ -195,12 +211,13 @@ namespace Mayfly.Modules
 				}
 			}
 
-			await this.ReplyAsync($"Found that password `{times:#,0}` {(times == 1 ? "time." : "times.")}");
+			await this.FollowupAsync($"Found that password `{times:#,0}` {(times == 1 ? "time." : "times.")}");
 		}
 
-		[Command("baro"), Summary("Is Baro Ki'Teer here?")]
+		[SlashCommand("baro", "Is Baro Ki'Teer here?")]
 		public async Task Baro()
 		{
+			await DeferAsync();
 			VoidTraderInfo json = await Http.GetJsonAsync<VoidTraderInfo>("https://api.warframestat.us/pc/voidTrader");
 
 			if (json is not null)
@@ -216,7 +233,7 @@ namespace Mayfly.Modules
 						builder.AppendLine();
 					}
 
-					await ReplyAsync("", false, new EmbedBuilder()
+					await FollowupAsync(embed: new EmbedBuilder()
 					{
 						Title = "Baro Ki'Teer's inventory",
 						Color = new Color(0xFFC83D),
@@ -225,12 +242,12 @@ namespace Mayfly.Modules
 				}
 				else
 				{
-					await ReplyAsync($"Baro Ki'Teer will arrive in {json.StartString}");
+					await FollowupAsync($"Baro Ki'Teer will arrive in {json.StartString}");
 				}
 			}
 			else
 			{
-				await ReplyAsync("Baro Ki'Teer is gone, dead, not alive.");
+				await FollowupAsync("Baro Ki'Teer is gone, dead, not alive.");
 			}
 		}
 	}

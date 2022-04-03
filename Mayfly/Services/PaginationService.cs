@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 
 namespace Mayfly.Services
@@ -75,7 +76,7 @@ namespace Mayfly.Services
 			client.ButtonExecuted += this.ButtonHandler;
 		}
 
-		public async Task<IUserMessage> SendMessageAsync(IMessageChannel channel, PaginatedMessage paginated)
+		public async Task<IUserMessage> SendMessageAsync(SocketInteractionContext ctx, PaginatedMessage paginated, bool followup = false)
 		{
 			IUserMessage message;
 
@@ -105,12 +106,29 @@ namespace Mayfly.Services
 						builder.WithButton("Next", "next", ButtonStyle.Primary);
 						break;
 				}
-				
-				message = await channel.SendMessageAsync("", embed: paginated.GetEmbed(), components: builder.Build());
+
+				if (followup)
+				{
+					message = await ctx.Interaction.FollowupAsync(embed: paginated.GetEmbed(), components: builder.Build());
+				}
+				else
+				{
+					await ctx.Interaction.FollowupAsync(embed: paginated.GetEmbed(), components: builder.Build());
+					message = await ctx.Interaction.GetOriginalResponseAsync();
+				}
 			}
 			else
 			{
-				message = await channel.SendMessageAsync("", embed: paginated.GetEmbed());
+				if (followup)
+				{
+					message = await ctx.Interaction.FollowupAsync(embed: paginated.GetEmbed());
+				}
+				else
+				{
+					await ctx.Interaction.RespondAsync(embed: paginated.GetEmbed());
+					message = await ctx.Interaction.GetOriginalResponseAsync();
+				}
+				
 				return message;
 			}
 

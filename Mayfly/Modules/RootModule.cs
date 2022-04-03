@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Mayfly.Attributes;
 using Mayfly.Database;
@@ -13,12 +13,12 @@ using Mayfly.Services;
 
 namespace Mayfly.Modules
 {
-	[Group("root"), RequireOwner, Hidden]
-	public class RootModule : MayflyModule
+	[Group("root", "Bot developer commands."), RequireOwner, DontAutoRegister]
+	public class RootModule : MayflyInteraction
 	{
 		public DatabaseService Database { get; set; }
 		
-		[Command("resetnick")]
+		[SlashCommand("resetnick", "Resets personal nickname across all guilds.")]
 		public async Task ResetNickname()
 		{
 			foreach (SocketGuild guild in Context.Client.Guilds)
@@ -28,9 +28,11 @@ namespace Mayfly.Modules
 					await guild.CurrentUser.ModifyAsync(u => u.Nickname = string.Empty);
 				}
 			}
+
+			await RespondAsync("Reset nicknames.", ephemeral: true);
 		}
 		
-		[Command("leave")]
+		[SlashCommand("leave", "Leave guild.")]
 		public async Task Leave(ulong id)
 		{
 			SocketGuild guild = Context.Client.GetGuild(id);
@@ -38,10 +40,11 @@ namespace Mayfly.Modules
 			if (guild != null)
 			{
 				await guild.LeaveAsync();
+				await RespondAsync("Left the guild.", ephemeral: true);
 			}
 		}
 
-		[Command("guilds")]
+		[SlashCommand("guilds", "List joined guilds.")]
 		public async Task Guilds()
 		{
 			StringBuilder builder = new StringBuilder();
@@ -51,10 +54,10 @@ namespace Mayfly.Modules
 				builder.AppendLine($"{guild.Id} - {guild.Name}");
 			}
 
-			await ReplyCodeAsync(builder.ToString());
+			await RespondWithCodeAsync(builder.ToString(), ephemeral: true);
 		}
 
-		[Command("invite")]
+		[SlashCommand("invite", "Generate invite for guild.")]
 		public async Task Invite(ulong id)
 		{
 			SocketGuild guild = Context.Client.GetGuild(id);
@@ -66,52 +69,39 @@ namespace Mayfly.Modules
 					if (guild.CurrentUser.GetPermissions(channel).CreateInstantInvite)
 					{
 						IInviteMetadata invite = await channel.CreateInviteAsync(60, 1, false, false);
-						await ReplyAsync(invite.Url);
+						await RespondAsync(invite.Url, ephemeral: true);
 						return;
 					}
 				}
 
-				await ReplyAsync("Failed to find a valid channel for making an invite.");
+				await RespondAsync("Failed to find a valid channel for making an invite.", ephemeral: true);
 			}
 		}
 
-		[Command("announce")]
-		public async Task Announce([Remainder] string text)
+		[SlashCommand("announce", "Broadcast an announcement to all guilds.")]
+		public async Task Announce(string text)
 		{
 			foreach (SocketGuild guild in Context.Client.Guilds)
 			{
 				SocketTextChannel announceChannel = null;
-				GuildData data = await Database.GetGuildAsync(guild);
-
-				switch (data)
+				
+				if (guild.CurrentUser.GetPermissions(guild.DefaultChannel).SendMessages)
 				{
-					case {BlockAnnouncement: true}:
-						continue;
-					case { AnnouncementId: > 0 }:
-						break;
-					default:
+					announceChannel = guild.DefaultChannel;
+				}
+				else if (guild.CurrentUser.GetPermissions(guild.SystemChannel).SendMessages)
+				{
+					announceChannel = guild.SystemChannel;
+				}
+				else
+				{
+					foreach (SocketTextChannel channel in guild.TextChannels.OrderBy(c => c.Position))
 					{
-						if (guild.CurrentUser.GetPermissions(guild.DefaultChannel).SendMessages)
+						if (guild.CurrentUser.GetPermissions(channel).SendMessages)
 						{
-							announceChannel = guild.DefaultChannel;
+							announceChannel = channel;
+							break;
 						}
-						else if (guild.CurrentUser.GetPermissions(guild.SystemChannel).SendMessages)
-						{
-							announceChannel = guild.SystemChannel;
-						}
-						else
-						{
-							foreach (SocketTextChannel channel in guild.TextChannels.OrderBy(c => c.Position))
-							{
-								if (guild.CurrentUser.GetPermissions(channel).SendMessages)
-								{
-									announceChannel = channel;
-									break;
-								}
-							}
-						}
-
-						break;
 					}
 				}
 
@@ -124,90 +114,51 @@ namespace Mayfly.Modules
 						Description = text
 					}.Build());
 				}
+
+				await RespondAsync("Sent announcement.", ephemeral: true);
 			}
 		}
 
-		[Group("db"), RequireOwner, Hidden]
-		public class DatabaseModule : MayflyModule
+		[Group("db", "Database stuff."), RequireOwner, DontAutoRegister]
+		public class DatabaseModule : MayflyInteraction
 		{
 			public DatabaseService Database { get; set; }
 			
-			[Command("get")]
+			[SlashCommand("get", "Get raw database info for user.")]
 			public async Task Get(IUser user)
 			{
 				UserData data = await Database.GetUserAsync(user);
 				
 				if (data is not null)
 				{
-					StringBuilder builder = new StringBuilder();
-					builder.AppendLine($"Id: {data.UserId}\nXP: {data.Experience}\nInvokes: {data.Invokes}\nCash: {data.Money}\nTokens: {data.Tokens}\n");
-					builder.AppendLine("\n===== Inventory =====");
-
-					foreach (ItemData item in await Database.GetItemsAsync(user))
-					{
-						builder.AppendLine($"Name: {item.Name}\nDescription: {item.Description}\nImage: {item.ImgurId}\nCost: {item.Cost}\n");
-					}
-					
-					await using MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(builder.ToString()));
-					await ReplyFileAsync(stream, $"{user.Id}.txt");
+					await RespondWithCodeAsync($"Id: {data.UserId}\nXP: {data.Experience}\nInvokes: {data.Invokes}\nCash: {data.Money}\nTokens: {data.Tokens}\n", ephemeral: true);
 				}
 				else
 				{
-					await ReplyAsync("No user found");
+					await RespondAsync("No user found", ephemeral: true);
 				}
 			}
-			
-			[Command("market")]
-			public async Task GetMarket()
-			{
-				StringBuilder builder = new StringBuilder();
-				List<ItemData> items = await Database.GetItemsAsync();
-				
-				foreach (ItemData item in items.OrderBy(i => i.Amount))
-				{
-					builder.AppendLine($"Name        : {item.Name}");
-					builder.AppendLine($"Description : {item.Description}");
-					builder.AppendLine($"ImgurId     : {item.ImgurId}");
-					builder.AppendLine($"Cost        : {item.Cost}");
-					builder.AppendLine($"UserId      : {item.Name}");
-					builder.AppendLine();
-				}
 
-				await using MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(builder.ToString()));
-				await ReplyFileAsync(stream, "items.txt");
-			}
-
-			[Command("setmoney")]
+			[SlashCommand("setmoney", "Set users money.")]
 			public async Task SetMoney(IUser user, int money)
 			{
 				await Database.ModifyUserAsync(user, data =>
 				{
 					data.Money = money;
 				});
-			}
 
-			[Command("additem")]
-			public async Task AddItem(IUser user, string name, string description, string imgurId, uint color, uint cost, int amount)
-			{
-				await Database.AddItemAsync(user, name, description, imgurId, color, cost, amount);
+				await RespondAsync($"Set `{user.Username}:{user.Discriminator}` money to `${money}`", ephemeral: true);
 			}
 			
-			[Command("deleteitem")]
-			public async Task DeleteItem(IUser user, string name)
+			[SlashCommand("settokens", "Set users tokens.")]
+			public async Task SetTokens(IUser user, int tokens)
 			{
-				await Database.DeleteItemAsync(user, name);
-			}
-			
-			[Command("addmarket")]
-			public async Task AddMarket(string name, string description, string imgurId, uint color, uint cost, int amount)
-			{
-				await Database.AddItemAsync(name, description, imgurId, color, cost, amount);
-			}
+				await Database.ModifyUserAsync(user, data =>
+				{
+					data.Tokens = tokens;
+				});
 
-			[Command("deletemarket")]
-			public async Task DeleteMarket(string name)
-			{
-				await Database.DeleteItemAsync(name);
+				await RespondAsync($"Set `{user.Username}:{user.Discriminator}` tokens to `${tokens}`", ephemeral: true);
 			}
 		}
 	}

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Discord.Commands;
+using Discord.Interactions;
 using Mayfly.Services;
 
 namespace Mayfly.Modules
@@ -24,7 +24,7 @@ namespace Mayfly.Modules
 		}
 	}
 
-	public class MathModule : MayflyModule
+	public class MathModule : MayflyInteraction
 	{
 		public HttpService http { get; set; }
 
@@ -37,13 +37,15 @@ namespace Mayfly.Modules
 			
 			lines.Push(num > 1 ? $"{num} {text}s" : $"{num} {text}");
 		}
-
-		[Command("math"), Alias("calc"), Summary("Calculate stuff.")]
-		public async Task<RuntimeResult> Calc([Remainder] string expression)
+		
+		[SlashCommand("math", "Calculate stuff.")]
+		public async Task<RuntimeResult> Calc(string expression)
 		{
+			await DeferAsync();
+			
 			if (expression.Replace(" ", "") == "9+10")
 			{
-				await ReplyAsync("21");
+				await RespondAsync("21");
 				return MayflyResult.FromSuccess();
 			}
 		
@@ -54,11 +56,11 @@ namespace Mayfly.Modules
 				return MayflyResult.FromError("InvalidExpression", calculated.Replace("", "Error: "));
 			}
 
-			await ReplyAsync(calculated);
+			await FollowupAsync(calculated);
 			return MayflyResult.FromSuccess();
 		}
-
-		[Command("stack"), Summary("Calculate item stacks.")]
+		
+		[SlashCommand("stack", "Calculate item stacks.")]
 		public async Task Stack(ulong items, ulong size = 64)
 		{
 			Stack<string> lines = new Stack<string>();
@@ -74,7 +76,7 @@ namespace Mayfly.Modules
 				lines.Push("and " + lines.Pop());
 			}
 
-			await ReplyAsync(string.Join(", ", lines.Reverse()));
+			await RespondAsync(string.Join(", ", lines.Reverse()));
 		}
 	}
 }
