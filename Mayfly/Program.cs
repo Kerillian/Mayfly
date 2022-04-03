@@ -16,7 +16,7 @@ using Lavalink4NET;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Logging;
 using Lavalink4NET.MemoryCache;
-using RunMode = Discord.Commands.RunMode;
+using Mayfly.Modules;
 
 namespace Mayfly
 {
@@ -27,15 +27,6 @@ namespace Mayfly
 		public static async Task Main()
 		{
 			await new Program().StartAsync();
-		}
-
-		private static bool InDevelopment()
-		{
-			#if DEBUG
-				return true;
-			#else
-				return false;
-			#endif
 		}
 
 		private static ServiceProvider ConfigureServices()
@@ -111,21 +102,22 @@ namespace Mayfly
 			await context.Database.EnsureCreatedAsync();
 			await interaction.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
 			await client.LoginAsync(TokenType.Bot, provider.GetRequiredService<BotConfig>().Token);
-			await client.SetGameAsync($"for {config.Prefix}help", null, ActivityType.Watching);
-			
+
 			await client.StartAsync();
 
 			client.Ready += async () =>
 			{
 				await audio.InitializeAsync();
 				
-				if (InDevelopment())
-				{
+				#if DEBUG
 					await interaction.RegisterCommandsToGuildAsync(config.DebugID);
-				}
-				else
-				{
+				#else
 					await interaction.RegisterCommandsGloballyAsync();
+				#endif
+
+				if (client.GetGuild(config.DebugID) is IGuild guild)
+				{
+					await interaction.AddModulesToGuildAsync(guild, true, interaction.GetModuleInfo<RootModule>());
 				}
 			};
 
