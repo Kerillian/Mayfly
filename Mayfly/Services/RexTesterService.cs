@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Mayfly.Structures;
+﻿using Mayfly.Structures;
 using Newtonsoft.Json;
 
 namespace Mayfly.Services

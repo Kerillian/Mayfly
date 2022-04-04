@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Mayfly.Utilities
+﻿namespace Mayfly.Utilities
 {
 	public class PeriodicTask
 	{

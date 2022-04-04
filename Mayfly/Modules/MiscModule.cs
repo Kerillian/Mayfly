@@ -37,17 +37,7 @@ namespace Mayfly.Modules
 				await this.FollowupWithFileAsync(stream, "anime.png");
 			}
 		}
-		
-		[SlashCommand("robot", "Generate a robot based on your id.")]
-		public async Task Robot()
-		{
-			await RespondAsync(embed: new EmbedBuilder()
-			{
-				Color = new Color(0x9EDBF9),
-				ImageUrl = $"https://robohash.org/{Context.User.Id}.png?set=set3&bgset=bg{Random.Next(0, 2)}"
-			}.Build());
-		}
-		
+
 		[SlashCommand("inspire", "inspirobot.me in discord.")]
 		public async Task Inspire()
 		{

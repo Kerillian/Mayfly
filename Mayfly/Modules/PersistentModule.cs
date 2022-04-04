@@ -1,9 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
-using Mayfly.Attributes;
 using Mayfly.Database;
 using Mayfly.Services;
 

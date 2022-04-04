@@ -1,9 +1,5 @@
-﻿using System.Threading.Tasks;
-using Discord;
-using Discord.Interactions;
-using Discord.Rest;
+﻿using Discord;
 using Discord.WebSocket;
-using Lavalink4NET;
 using Lavalink4NET.Events;
 using Lavalink4NET.Player;
 using Mayfly.Extensions;

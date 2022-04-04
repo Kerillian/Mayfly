@@ -1,5 +1,4 @@
 using System.Text;
-using System.Linq;
 using System.Security.Cryptography;
 
 namespace Mayfly.Utilities

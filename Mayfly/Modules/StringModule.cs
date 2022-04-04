@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Discord.Interactions;
 using Mayfly.Extensions;
 using Mayfly.Services;

@@ -1,19 +1,11 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Interactions;
-using Discord.Rest;
-using Mayfly.Attributes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Newtonsoft.Json.Linq;
 using Mayfly.Extensions;
 using Mayfly.Services;
-using Mayfly.Structures;
 using Mayfly.Utilities;
 
 namespace Mayfly.Modules
@@ -73,53 +65,6 @@ namespace Mayfly.Modules
 					new EmbedFieldBuilder() { Name = "Running", Value = $"Discord.Net v{DiscordConfig.Version}", IsInline = true }
 				}
 			}.Build());
-		}
-		
-		[GuildOwner, RequireBotPermission(GuildPermission.CreateInstantInvite), RequireContext(ContextType.Guild)]
-		[SlashCommand("assistance", "Request bot assistance.")]
-		public async Task<RuntimeResult> Assistance()
-		{
-			if (Context.Channel is ITextChannel channel)
-			{
-				IInviteMetadata invite = await channel.CreateInviteAsync(null, 1, true);
-				RestApplication rest = await Context.Client.GetApplicationInfoAsync();
-
-				if (invite != null && rest?.Owner != null)
-				{
-					await rest.Owner.SendMessageAsync("", false, new EmbedBuilder()
-					{
-						Title = $"Assistance requested - {Context.Guild.Name}",
-						Color = new Discord.Color(0x00C51C),
-						Fields = new List<EmbedFieldBuilder>()
-						{
-							new EmbedFieldBuilder() { Name = "Owner", Value = $"{Context.User.Username}#{Context.User.Discriminator}", IsInline = true },
-							new EmbedFieldBuilder() { Name = "Invite", Value = invite.Url, IsInline = true}
-						}
-					}.WithEmpty().Build());
-
-					await RespondAsync("I have sent an invite to the developer. Please note that he might be offline or afk.");
-					return MayflyResult.FromSuccess();
-				}
-			}
-
-			return MayflyResult.FromError("Unknown", "An unknown error has occurred, please try again.");
-		}
-
-		[SlashCommand("status", "Check discord server status.")]
-		public async Task Status()
-		{
-			await DeferAsync();
-			SPResult json = await Http.GetJsonAsync<SPResult>("https://srhpyqt94yxb.statuspage.io/api/v2/summary.json");
-
-			EmbedBuilder builder = new EmbedBuilder()
-			{
-				Title = json.Status.Description,
-				Color = new Discord.Color(0x738BD7),
-
-				Fields = json.Components.Select(x => new EmbedFieldBuilder().WithIsInline(true).WithName(x.Name).WithValue(x.Status)).ToList()
-			}.WithEmpty();
-
-			await FollowupAsync(embed: builder.Build());
 		}
 
 		[SlashCommand("translate", "Google Translate in discord.")]
@@ -223,18 +168,6 @@ namespace Mayfly.Modules
 			await img.SaveAsPngAsync(stream);
 			stream.Seek(0, SeekOrigin.Begin);
 			await RespondWithFileAsync(stream, "color.png", embed: builder.Build());
-		}
-
-		[SlashCommand("screenshot", "Screenshot a website.")]
-		public async Task<RuntimeResult> Screenshot(string url)
-		{
-			if (!url.StartsWith("http"))
-			{
-				return MayflyResult.FromUserError("InvalidUrl", "Invalid url provided.");
-			}
-			
-			await this.RespondAsync(embed: new EmbedBuilder().WithImageUrl($"https://api.microlink.io/?url={Uri.EscapeDataString(url)}&screenshot=true&meta=false&embed=screenshot.url").Build());
-			return MayflyResult.FromSuccess();
 		}
 	}
 }

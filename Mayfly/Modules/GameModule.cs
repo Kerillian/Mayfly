@@ -55,7 +55,5 @@ namespace Mayfly.Modules
 			
 			return MayflyResult.FromSuccess();
 		}
-		
-		
 	}
 }

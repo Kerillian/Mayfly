@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Drawing;
-using System.Collections.Generic;
-
 using DiscordColor = Discord.Color;
 
 namespace Mayfly.Utilities

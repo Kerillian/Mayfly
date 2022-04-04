@@ -1,8 +1,6 @@
-using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Discord;
 using Discord.WebSocket;
-using Discord.Commands;
 using Discord.Interactions;
 
 namespace Mayfly.Services.Trivia

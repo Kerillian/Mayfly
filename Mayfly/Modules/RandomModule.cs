@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Mayfly.Extensions;

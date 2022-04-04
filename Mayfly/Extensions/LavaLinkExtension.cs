@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using Discord;
 using Lavalink4NET.Player;
-using Mayfly.Modules;
 using Mayfly.Utilities;
 
 namespace Mayfly.Extensions

@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Mayfly.Services;
 using Mayfly.Structures;
-using Mayfly.Utilities;
 using RuntimeResult = Discord.Interactions.RuntimeResult;
 
 namespace Mayfly.Modules

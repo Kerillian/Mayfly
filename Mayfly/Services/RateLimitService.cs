@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 
 namespace Mayfly.Services
