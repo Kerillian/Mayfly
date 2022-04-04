@@ -9,7 +9,7 @@ using Mayfly.Services;
 
 namespace Mayfly.Modules
 {
-	public class PersistentModule : MayflyInteraction
+	public class PersistentModule : MayflyModule
 	{
 		public DatabaseService Database { get; set; }
 

@@ -24,7 +24,7 @@ namespace Mayfly.Modules
 		}
 	}
 
-	public class MathModule : MayflyInteraction
+	public class MathModule : MayflyModule
 	{
 		public HttpService http { get; set; }
 

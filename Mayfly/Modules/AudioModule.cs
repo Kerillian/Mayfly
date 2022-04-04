@@ -10,14 +10,13 @@ using Lavalink4NET;
 using Lavalink4NET.Filters;
 using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
-using Mayfly.Attributes.Parameter;
 using Mayfly.Services;
 using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
 	[RequireContext(ContextType.Guild), Group("music", "Music stuff.")]
-	public class AudioModule : MayflyInteraction
+	public class AudioModule : MayflyModule
 	{
 		public IAudioService LavaNode { private get; set; }
 		public PaginationService Pagination { private get; set; }
@@ -459,7 +458,7 @@ namespace Mayfly.Modules
 		}
 
 		[SlashCommand("boost", "Boost the lower band range.")]
-		public async Task<RuntimeResult> Boost([Range(-0.25f, 1.0f)] float amount = 1)
+		public async Task<RuntimeResult> Boost([MinValue(-0.25f), MaxValue(1.0f)] float amount = 1)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 
@@ -509,7 +508,7 @@ namespace Mayfly.Modules
 		}
 
 		[SlashCommand("vibrato", "Wavy funny.")]
-		public async Task<RuntimeResult> Vibrato([Range(5.0f, 14.0f)] float strength = 5)
+		public async Task<RuntimeResult> Vibrato([MinValue(5f), MaxValue(15f)] float strength = 5)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 
@@ -567,7 +566,7 @@ namespace Mayfly.Modules
 		}
 
 		[SlashCommand("rape", "CBT for your ears.")]
-		public async Task<RuntimeResult> Rape([Range(2f, 10f)] float pain = 3)
+		public async Task<RuntimeResult> Rape([MinValue(2f), MaxValue(10f)] float pain = 3)
 		{
 			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 

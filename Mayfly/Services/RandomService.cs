@@ -2,6 +2,7 @@ using System;
 using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace Mayfly.Services
@@ -64,6 +65,17 @@ namespace Mayfly.Services
 		public T Pick<T>(JArray array)
 		{
 			return array[this.Next(0, array.Count - 1)].Value<T>();
+		}
+
+		public Match Pick(MatchCollection collection)
+		{
+			return collection[this.Next(0, collection.Count - 1)];
+		}
+
+		public T Pick<T>(IEnumerable<T> enumerable)
+		{
+			int index = this.Next(0, enumerable.Count() - 1);
+			return enumerable.ElementAt(index);
 		}
 
 		public bool Chance(int likelihood = 50)

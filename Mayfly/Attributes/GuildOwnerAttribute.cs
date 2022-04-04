@@ -1,12 +1,13 @@
 using System;
 using System.Threading.Tasks;
-using Discord.Commands;
+using Discord;
+using Discord.Interactions;
 
 namespace Mayfly.Attributes
 {
 	public class GuildOwnerAttribute : PreconditionAttribute
 	{
-		public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+		public override Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo commandInfo, IServiceProvider services)
 		{
 			if (context.User.Id == context.Guild.OwnerId)
 			{

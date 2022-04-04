@@ -1,14 +1,14 @@
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using Mayfly.Akinator.Enumerations;
-using Mayfly.Attributes.Parameter;
 using Mayfly.Services;
 using Mayfly.Services.Poll;
 using Mayfly.Services.Trivia;
 
 namespace Mayfly.Modules
 {
-	public class GameModule : MayflyInteraction
+	public class GameModule : MayflyModule
 	{
 		public AkinatorService akinator { get; set; }
 		public RouletteService roulette { get; set; }
@@ -33,7 +33,7 @@ namespace Mayfly.Modules
 		}
 
 		[SlashCommand("trivia", "Tower Unite's Trivia.")]
-		public async Task<RuntimeResult> Trivia([Range(5, 50)] int total = 10, TriviaCategory category = TriviaCategory.All, TriviaDifficulty difficulty = TriviaDifficulty.All, TriviaType type = TriviaType.All)
+		public async Task<RuntimeResult> Trivia([MinValue(5), MaxValue(50)] int total = 10, TriviaCategory category = TriviaCategory.All, TriviaDifficulty difficulty = TriviaDifficulty.All, TriviaType type = TriviaType.All)
 		{
 			if (!await trivia.NewSession(Context, new TriviaOptions(total, category, difficulty, type)))
 			{
@@ -46,7 +46,7 @@ namespace Mayfly.Modules
 		[SlashCommand("poll", "Simple poll system.")]
 		public async Task<RuntimeResult> Poll(string title, string option1, string option2, string option3 = "", string option4 = "", string option5 = "", string option6 = "", string option7 = "", string option8 = "", string option9 = "", string option10 = "")
 		{
-			string[] options = { option1, option2, option3, option4, option5, option6, option7, option9, option10 };
+			string[] options = { option1, option2, option3, option4, option5, option6, option7, option8, option9, option10 };
 				
 			if (!await poll.Create(Context, title, options.Where(x => !string.IsNullOrEmpty(x)).ToArray()))
 			{
@@ -55,5 +55,7 @@ namespace Mayfly.Modules
 			
 			return MayflyResult.FromSuccess();
 		}
+		
+		
 	}
 }

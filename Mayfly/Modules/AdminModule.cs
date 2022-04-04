@@ -4,12 +4,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using Mayfly.Attributes.Parameter;
 using Mayfly.Extensions;
 
 namespace Mayfly.Modules
 {
-	public class AdminModule : MayflyInteraction
+	public class AdminModule : MayflyModule
 	{
 		public BotConfig Config { get; set; }
 

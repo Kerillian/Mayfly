@@ -13,7 +13,7 @@ using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
-	public class SearchModule : MayflyInteraction
+	public class SearchModule : MayflyModule
 	{
 		public HttpService Http { get; set; }
 		public PaginationService Pagination { get; set; }

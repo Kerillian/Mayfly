@@ -113,7 +113,7 @@ namespace Mayfly.Services
 				}
 				else
 				{
-					await ctx.Interaction.FollowupAsync(embed: paginated.GetEmbed(), components: builder.Build());
+					await ctx.Interaction.RespondAsync(embed: paginated.GetEmbed(), components: builder.Build());
 					message = await ctx.Interaction.GetOriginalResponseAsync();
 				}
 			}

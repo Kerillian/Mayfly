@@ -4,13 +4,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Mayfly.Extensions;
-using Mayfly.Attributes.Parameter;
 using Mayfly.Services;
 using Mayfly.Structures;
 
 namespace Mayfly.Modules
 {
-	public class RandomModule : MayflyInteraction
+	public class RandomModule : MayflyModule
 	{
 		private static readonly string[] DiceIds = new string[6] { "6Zzf1KL", "RKCQ1w5", "P2F567A", "cx94cKE", "zyGoZXz", "a9PEYtY" };
 		private static readonly string[] Answers = new string[20]

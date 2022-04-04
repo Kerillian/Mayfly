@@ -1,11 +1,9 @@
-﻿using Discord.Commands;
-using Discord.Interactions;
-using RuntimeResult = Discord.Commands.RuntimeResult;
+﻿using Discord.Interactions;
 
 namespace Mayfly
 {
 
-	public class MayflyResult : Discord.Interactions.RuntimeResult
+	public class MayflyResult : RuntimeResult
 	{
 		public string Message { get; }
 

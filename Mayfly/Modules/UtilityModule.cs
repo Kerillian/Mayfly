@@ -18,7 +18,7 @@ using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
-	public class UtilityModule : MayflyInteraction
+	public class UtilityModule : MayflyModule
 	{
 		private const string VC1 = "[url=https://www.youtube.com/embed/{0}?autoplay=1&controls=0&disablekb=1&loop=1&playlist={1}&showinfo=0&iv_load_policy=3]View more info[/url]";
 		private const string VC2 = "[url=https://www.youtube.com/embed/{0}?autoplay=1&controls=0&disablekb=1&loop=1&playlist={1}&showinfo=0&iv_load_policy=3&start={2}]View more info[/url]";

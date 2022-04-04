@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord.Commands;
+using Discord;
+using Discord.Interactions;
 using Mayfly.Services;
 
 namespace Mayfly.Attributes
@@ -13,20 +14,20 @@ namespace Mayfly.Attributes
 		{
 			this.timeSpan = TimeSpan.FromSeconds(seconds);
 		}
-		
-		public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+
+		public override Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo info, IServiceProvider services)
 		{
 			if (services.GetService(typeof(RateLimitService)) is not RateLimitService rateLimiter)
 			{
 				return Task.FromResult(PreconditionResult.FromSuccess());
 			}
-
-			if (rateLimiter.IsLimited(context, command, out TimeSpan left))
+			
+			if (rateLimiter.IsLimited(context, info, out TimeSpan left))
 			{
 				return Task.FromResult(PreconditionResult.FromError($"You're running that command too fast.\nPlease try again in `{left.TotalSeconds:0}` seconds."));
 			}
-
-			rateLimiter.SetLimited(context, command, timeSpan);
+			
+			rateLimiter.SetLimited(context, info, timeSpan);
 			return Task.FromResult(PreconditionResult.FromSuccess());
 		}
 	}

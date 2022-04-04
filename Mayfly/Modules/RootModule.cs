@@ -14,7 +14,7 @@ using Mayfly.Services;
 namespace Mayfly.Modules
 {
 	[Group("root", "Bot developer commands."), RequireOwner, DontAutoRegister]
-	public class RootModule : MayflyInteraction
+	public class RootModule : MayflyModule
 	{
 		public DatabaseService Database { get; set; }
 		
@@ -120,7 +120,7 @@ namespace Mayfly.Modules
 		}
 
 		[Group("db", "Database stuff."), RequireOwner, DontAutoRegister]
-		public class DatabaseModule : MayflyInteraction
+		public class DatabaseModule : MayflyModule
 		{
 			public DatabaseService Database { get; set; }
 			

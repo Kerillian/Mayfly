@@ -107,17 +107,16 @@ namespace Mayfly
 
 			client.Ready += async () =>
 			{
-				await audio.InitializeAsync();
-				
 				#if DEBUG
 					await interaction.RegisterCommandsToGuildAsync(config.DebugID);
 				#else
 					await interaction.RegisterCommandsGloballyAsync();
+					await audio.InitializeAsync();
 				#endif
 
 				if (client.GetGuild(config.DebugID) is IGuild guild)
 				{
-					await interaction.AddModulesToGuildAsync(guild, true, interaction.GetModuleInfo<RootModule>());
+					//await interaction.AddModulesToGuildAsync(guild, true, interaction.GetModuleInfo<RootModule>());
 				}
 			};
 

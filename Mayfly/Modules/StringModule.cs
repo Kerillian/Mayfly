@@ -6,7 +6,7 @@ using Mayfly.Services;
 
 namespace Mayfly.Modules
 {
-	public class StringModule : MayflyInteraction
+	public class StringModule : MayflyModule
 	{
 		private static readonly Dictionary<char, string> FancyDic = new Dictionary<char, string>()
 		{

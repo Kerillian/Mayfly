@@ -3,7 +3,7 @@ using Discord.Interactions;
 
 namespace Mayfly
 {
-	public class MayflyInteraction : InteractionModuleBase<SocketInteractionContext>
+	public class MayflyModule : InteractionModuleBase<SocketInteractionContext>
 	{
 		/*
 		 * Respond

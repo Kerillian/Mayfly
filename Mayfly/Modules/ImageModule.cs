@@ -9,7 +9,6 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Mayfly.Extensions;
-using Mayfly.Attributes.Parameter;
 using Mayfly.Services;
 using Mayfly.Structures;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -18,14 +17,14 @@ using RuntimeResult = Discord.Interactions.RuntimeResult;
 
 namespace Mayfly.Modules
 {
-	public class ImageModule : MayflyInteraction
+	public class ImageModule : MayflyModule
 	{
 		public HttpService http { get; set; }
 		public RandomService random { get; set; }
 		public BotConfig config { get; set; }
 
-		[SlashCommand("oil", "Make anything art.")]
-		public async Task<RuntimeResult> Oil(string url, [Range(1, 50)] int levels = 25, [Range(1, 50)] int size = 30)
+		[SlashCommand("oil", "Make anything art."), RateLimit(5)]
+		public async Task<RuntimeResult> Oil(string url, [MinValue(1), MaxValue(50)] int levels = 25, [MinValue(1), MaxValue(50)] int size = 30)
 		{
 			await DeferAsync();
 			using Image image = await this.http.GetMediaAsync(url);

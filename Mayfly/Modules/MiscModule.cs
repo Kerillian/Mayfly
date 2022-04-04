@@ -7,7 +7,7 @@ using Mayfly.Services;
 
 namespace Mayfly.Modules
 {
-	public class MiscModule : MayflyInteraction
+	public class MiscModule : MayflyModule
 	{
 		public HttpService Http { get; set; }
 		public RandomService Random { get; set; }

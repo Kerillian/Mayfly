@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Discord.Commands;
+using Discord;
+using Discord.Interactions;
 
 namespace Mayfly.Services
 {
@@ -8,7 +9,7 @@ namespace Mayfly.Services
 	{
 		private readonly Dictionary<(ulong, string), DateTime> rateLimits = new Dictionary<(ulong, string), DateTime>();
 
-		public bool IsLimited(ICommandContext context, CommandInfo info, out TimeSpan timeLeft)
+		public bool IsLimited(IInteractionContext context, ICommandInfo info, out TimeSpan timeLeft)
 		{
 			(ulong Id, string Name) pair = (context.User.Id, info.Name);
 			
@@ -27,7 +28,7 @@ namespace Mayfly.Services
 			return false;
 		}
 
-		public bool SetLimited(ICommandContext context, CommandInfo info, TimeSpan time)
+		public bool SetLimited(IInteractionContext context, ICommandInfo info, TimeSpan time)
 		{
 			return rateLimits.TryAdd((context.User.Id, info.Name), DateTime.UtcNow + time);
 		}

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Text;
+using System.Xml.Serialization;
+using Mayfly.Structures;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
@@ -130,7 +132,7 @@ namespace Mayfly.Services
 			}
 		}
 
-		public async Task<V> PostJsonAsync<T,V>(string url, T data) where T : class where V : class
+		public async Task<V?> PostJsonAsync<T,V>(string url, T data) where T : class where V : class
 		{
 			try
 			{
@@ -150,7 +152,7 @@ namespace Mayfly.Services
 			}
 		}
 
-		public async Task<JObject> GraphQL(string url, string query, Dictionary<string, string> variables)
+		public async Task<JObject?> GraphQL(string url, string query, Dictionary<string, string> variables)
 		{
 			JObject body = new JObject()
 			{
