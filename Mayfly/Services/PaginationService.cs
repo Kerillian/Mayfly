@@ -86,7 +86,7 @@ namespace Mayfly.Services
 						builder.WithButton("First", "first", ButtonStyle.Secondary);
 						builder.WithButton("Back", "back", ButtonStyle.Primary);
 						builder.WithButton("Next", "next", ButtonStyle.Primary);
-						builder.WithButton("Last", "first", ButtonStyle.Secondary);
+						builder.WithButton("Last", "last", ButtonStyle.Secondary);
 						builder.WithButton("X", "stop", ButtonStyle.Danger);
 						break;
 					

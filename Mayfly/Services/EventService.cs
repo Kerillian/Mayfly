@@ -53,23 +53,30 @@ namespace Mayfly.Services
 					return;
 				}
 
-				Embed embed;
-				if (result is MayflyResult { Error: InteractionCommandError.Exception or InteractionCommandError.Unsuccessful } mResult)
+				EmbedBuilder embed;
+				
+				if (result is MayflyResult mResult)
 				{
 					embed = new EmbedBuilder()
 					{
 						Title = "Error: " + mResult.ErrorReason,
 						Color = Color.Red,
 						Description = mResult.Message
-					}.Build();
+					};
+
+					if (mResult.Error == InteractionCommandError.ParseFailed)
+					{
+						embed.Color = Color.Orange;
+					}
+
 
 					if (context.Interaction.HasResponded)
 					{
-						await context.Interaction.FollowupAsync(embed: embed, ephemeral: true);
+						await context.Interaction.FollowupAsync(embed: embed.Build(), ephemeral: true);
 					}
 					else
 					{
-						await context.Interaction.RespondAsync(embed: embed, ephemeral: true);
+						await context.Interaction.RespondAsync(embed: embed.Build(), ephemeral: true);
 					}
 
 					return;
@@ -80,15 +87,15 @@ namespace Mayfly.Services
 					Title = "Error: " + (result.Error?.ToString() ?? "Oof"),
 					Color = Color.Red,
 					Description = result.ErrorReason ?? "Something broke."
-				}.Build();
+				};
 						
 				if (context.Interaction.HasResponded)
 				{
-					await context.Interaction.FollowupAsync(embed: embed, ephemeral: true);
+					await context.Interaction.FollowupAsync(embed: embed.Build(), ephemeral: true);
 				}
 				else
 				{
-					await context.Interaction.RespondAsync(embed: embed, ephemeral: true);
+					await context.Interaction.RespondAsync(embed: embed.Build(), ephemeral: true);
 				}
 			}
 		}
@@ -102,11 +109,20 @@ namespace Mayfly.Services
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex);
-
-				if(si.Type == InteractionType.ApplicationCommand)
+				Embed embed = new EmbedBuilder()
 				{
-					await si.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+					Title = "Error: " + ex.GetType(),
+					Color = Color.Red,
+					Description = ex.Message
+				}.Build();
+						
+				if (si.HasResponded)
+				{
+					await si.FollowupAsync(embed: embed, ephemeral: true);
+				}
+				else
+				{
+					await si.RespondAsync(embed: embed, ephemeral: true);
 				}
 			}
 		}

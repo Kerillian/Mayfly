@@ -63,7 +63,8 @@ namespace Mayfly
 					{
 						RestUri = $"http://{cfg?.LavaLinkIP}:{cfg?.LavaLinkPort}",
 						WebSocketUri = $"ws://{cfg?.LavaLinkIP}:{cfg?.LavaLinkPort}",
-						Password = cfg?.LavaLinkPassword ?? "youshallnotpass"
+						Password = cfg?.LavaLinkPassword ?? "youshallnotpass",
+						AllowResuming = true
 					};
 				})
 				.AddSingleton<ILavalinkCache, LavalinkCache>()
@@ -102,11 +103,12 @@ namespace Mayfly
 
 			client.Ready += async () =>
 			{
+				await audio.InitializeAsync();
+				
 				#if DEBUG
 					await interaction.RegisterCommandsToGuildAsync(config.DebugID);
 				#else
 					await interaction.RegisterCommandsGloballyAsync();
-					await audio.InitializeAsync();
 				#endif
 
 				if (client.GetGuild(config.DebugID) is IGuild guild)

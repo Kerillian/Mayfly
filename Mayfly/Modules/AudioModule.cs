@@ -121,6 +121,49 @@ namespace Mayfly.Modules
 
 			return MayflyResult.FromSuccess();
 		}
+
+		[SlashCommand("playlist", "Queue an entire playlist.")]
+		public async Task<RuntimeResult> Playlist(string playlist)
+		{
+			if (Context.User is not IGuildUser user || user.VoiceChannel is null)
+			{
+				return MayflyResult.FromError("NoVoiceChannel", "User is not in a voice channel.");
+			}
+			
+			List<LavalinkTrack> tracks = (await LavaNode.GetTracksAsync(playlist)).ToList();
+
+			if (!tracks.Any())
+			{
+				return MayflyResult.FromUserError("EmptyPlaylist", "Playlist is empty, private, or non existent.");
+			}
+			
+			(MayflyPlayer player, MayflyResult result) = await GetPlayer(true);
+
+			if (result is not null)
+			{
+				return result;
+			}
+			
+			await DeferAsync();
+
+			foreach (LavalinkTrack track in tracks)
+			{
+				track.Context = new QueueInfo(Context.User, Context.Channel);
+				player.Queue.Add(track);
+				
+				Console.WriteLine(track.Title);
+			}
+			
+			await FollowupAsync("Added all media in playlist to queue.");
+			
+			if (player.State != PlayerState.Playing)
+			{
+				LavalinkTrack track = player.Queue.Dequeue();
+				await player.PlayTopAsync(track);
+			}
+
+			return MayflyResult.FromSuccess();
+		}
 		
 		[SlashCommand("moe", "Queue listen.moe.")]
 		public async Task<RuntimeResult> Moe()
@@ -270,38 +313,33 @@ namespace Mayfly.Modules
 		[SlashCommand("queue", "List track queue.")]
 		public async Task<RuntimeResult> Queue()
 		{
-			try
-			{
-				(MayflyPlayer player, MayflyResult result) = await GetPlayer();
+			(MayflyPlayer player, MayflyResult result) = await GetPlayer();
 
-				if (result is not null)
-				{
-					return result;
-				}
-
-				if (player.Queue.IsEmpty)
-				{
-					await RespondAsync(embed: new EmbedBuilder()
-					{
-						Title = "Queue",
-						Description = "_... empty ..._",
-						Color = Color.Red
-					}.Build());
-				}
-				else
-				{
-					await Pagination.SendMessageAsync(Context, new PaginatedMessage(player.GetQueuePaged(20).Select(x => new EmbedBuilder().WithDescription($"```cs\n{x}\n```")), null, Color.DarkGreen, Context.User, new AppearanceOptions()
-					{
-						Timeout = TimeSpan.FromMinutes(5),
-						Style = DisplayStyle.Full
-					}));
-				}
-			}
-			catch (Exception e)
+			if (result is not null)
 			{
-				Console.WriteLine(e);
+				return result;
 			}
 
+			if (player.Queue.IsEmpty)
+			{
+				await RespondAsync(embed: new EmbedBuilder()
+				{
+					Title = "Queue",
+					Description = "_... empty ..._",
+					Color = Color.Red
+				}.Build());
+			}
+			else
+			{
+				List<EmbedBuilder> builders = player.GetQueuePaged(10).Select(str => new EmbedBuilder().WithDescription(Format.Code(str, "cs"))).ToList();
+
+				await Pagination.SendMessageAsync(Context, new PaginatedMessage(builders, "Media queue", Color.DarkGreen, Context.User, new AppearanceOptions()
+				{
+					Timeout = TimeSpan.FromMinutes(5),
+					Style = DisplayStyle.Full
+				}));
+			}
+			
 			return MayflyResult.FromSuccess();
 		}
 
