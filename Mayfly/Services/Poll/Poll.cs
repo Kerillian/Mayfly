@@ -17,7 +17,9 @@ namespace Mayfly.Services.Poll
 		public int TotalVotes { get; set; }
 		private int lastVotes;
 		private bool timeout;
+		
 		private DateTimeOffset endTime = DateTimeOffset.Now.AddMinutes(10);
+		private ComponentBuilder componentBuilder = new ComponentBuilder();
 
 		public HashSet<ulong> Voters { get; } = new HashSet<ulong>();
 		public Dictionary<IEmote, PollOption> Options { get; } = new Dictionary<IEmote, PollOption>();
@@ -36,6 +38,7 @@ namespace Mayfly.Services.Poll
 			for (int i = 0; i < args.Length; i++)
 			{
 				this.Options.Add(new Emoji(OptionChars[i]), new PollOption(args[i]));
+				this.componentBuilder.WithButton(emote: new Emoji(OptionChars[i]), customId: OptionChars[i], style: ButtonStyle.Secondary);
 			}
 		}
 
@@ -62,12 +65,9 @@ namespace Mayfly.Services.Poll
 		public async Task Setup(SocketInteractionContext ctx)
 		{
 			this.endTime = DateTimeOffset.Now.AddMinutes(10);
-			//this.Message = .SendMessageAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", false, this.Build());
-			
-			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: this.Build());
-			this.Message = await ctx.Interaction.GetOriginalResponseAsync();
 
-			await this.Message.AddReactionsAsync(this.Options.Keys.ToArray());
+			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: this.Build(), components: componentBuilder.Build());
+			this.Message = await ctx.Interaction.GetOriginalResponseAsync();
 		}
 
 		public async Task Update(bool ended = false)
@@ -85,6 +85,7 @@ namespace Mayfly.Services.Poll
 							if (ended)
 							{
 								x.Content = $"Poll ended <t:{endTime.ToUnixTimeSeconds()}:R>";
+								x.Components = null;
 							}
 						});
 						
@@ -118,7 +119,6 @@ namespace Mayfly.Services.Poll
 		
 		public async Task Finish()
 		{
-			await this.Message.RemoveAllReactionsAsync();
 			await this.Update(true);
 		}
 	}

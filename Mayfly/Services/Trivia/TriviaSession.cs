@@ -2,16 +2,24 @@ using System.Web;
 using System.Collections.Concurrent;
 using Discord;
 using Discord.WebSocket;
+using Mayfly.Extensions;
 using Mayfly.Structures;
 
 namespace Mayfly.Services.Trivia
 {
 	public class TriviaSession
 	{
+		private const string A_EMOJI = "🇦";
+		private const string B_EMOJI = "🇧";
+		private const string C_EMOJI = "🇨";
+		private const string D_EMOJI = "🇩";
+		private const string TRUE_EMOJI = "✔️";
+		private const string FALSE_EMOJI = "⭕";
+		private const string JOIN_EMOJI = "➕";
+		private const string START_EMOJI = "▶️";
+		
 		private readonly HttpService http;
 		private ConcurrentDictionary<ulong, TriviaPlayer> Players = new ConcurrentDictionary<ulong, TriviaPlayer>();
-		private SocketInteraction interaction;
-		private readonly ISocketMessageChannel channel;
 		private IUserMessage message;
 		private bool waitingForPlayers = true;
 		private readonly ulong host;
@@ -25,41 +33,52 @@ namespace Mayfly.Services.Trivia
 			Color = Color.Green,
 		}.Build();
 
-		private readonly IEmote[] TrueFalseEmotes = new IEmote[2]
-		{
-			new Emoji("✔️"),
-			new Emoji("⭕")
-		};
+		private readonly MessageComponent WaitingComponent = new ComponentBuilder()
+			.WithButton("Join", "join", ButtonStyle.Success, new Emoji(JOIN_EMOJI))
+			.WithButton("Start", "start", ButtonStyle.Secondary, new Emoji(START_EMOJI))
+			.Build();
 
-		private readonly IEmote[] MultiChoiceEmotes = new IEmote[4]
-		{
-			new Emoji("🇦"),
-			new Emoji("🇧"),
-			new Emoji("🇨"),
-			new Emoji("🇩"),
-		};
+		private readonly MessageComponent TrueFalseComponent = new ComponentBuilder()
+			.WithButton("True", "true", ButtonStyle.Success, new Emoji(TRUE_EMOJI))
+			.WithButton("False", "false", ButtonStyle.Danger, new Emoji(FALSE_EMOJI))
+			.Build();
+
+		private readonly MessageComponent MultiChoiceComponent = new ComponentBuilder()
+			.WithButton(emote: new Emoji(A_EMOJI), customId: "a", style: ButtonStyle.Secondary)
+			.WithButton(emote: new Emoji(B_EMOJI), customId: "b", style: ButtonStyle.Secondary)
+			.WithButton(emote: new Emoji(C_EMOJI), customId: "c", style: ButtonStyle.Secondary)
+			.WithButton(emote: new Emoji(D_EMOJI), customId: "d", style: ButtonStyle.Secondary)
+			.Build();
 
 		private TriviaResult trivia;
 		private TriviaQuestion question;
-		private readonly Dictionary<IEmote, string> answerDict = new Dictionary<IEmote, string>();
+		private readonly Dictionary<string, string> answerDict = new Dictionary<string, string>();
 		private int answered;
 
-		public TriviaSession(HttpService hs, SocketInteraction interaction, ISocketMessageChannel channel, ulong host)
+		public TriviaSession(HttpService hs, ulong host)
 		{
 			this.http = hs;
-			this.interaction = interaction;
-			this.channel = channel;
 			this.host = host;
 		}
 
-		public async Task Setup(TriviaOptions options)
+		private string OptionToEmote(string option)
 		{
-			await this.interaction.RespondAsync(embed: presetEmbed);
-			this.message = await this.interaction.GetOriginalResponseAsync();
+			return option switch
+			{
+				"a"     => A_EMOJI,
+				"b"     => B_EMOJI,
+				"c"     => C_EMOJI,
+				"d"     => D_EMOJI,
+				"true"  => TRUE_EMOJI,
+				"false" => FALSE_EMOJI
+			};
+		}
+
+		public async Task Setup(SocketInteraction interaction, TriviaOptions options)
+		{
+			await interaction.RespondAsync(embed: presetEmbed, components: WaitingComponent);
+			this.message = await interaction.GetOriginalResponseAsync();
 			this.trivia = await this.http.GetJsonAsync<TriviaResult>(options.Build());
-			
-			await this.message.AddReactionAsync(new Emoji("➕"));
-			await this.message.AddReactionAsync(new Emoji("▶️"));
 
 			try
 			{
@@ -78,24 +97,28 @@ namespace Mayfly.Services.Trivia
 
 			this.cancelQuestionWait = new CancellationTokenSource();
 		}
-
-		public void HandleReaction(IUserMessage msg, SocketReaction reaction)
+		
+		public void HandleButtons(SocketMessageComponent interaction)
 		{
-			if (msg.Id != this.message.Id)
+			if (interaction.Message.Id != this.message.Id)
 			{
 				return;
 			}
-
+		
 			if (this.waitingForPlayers)
 			{
-				switch (reaction.Emote.Name)
+				switch (interaction.Data.CustomId)
 				{
-					case "▶️":
+					case "start":
 					{
-						if (reaction.UserId == this.host)
+						Console.WriteLine($"{interaction.User.Username}: Tried to start the game!");
+						
+						if (interaction.User.Id == this.host)
 						{
 							this.waitingForPlayers = false;
-
+							
+							Console.WriteLine($"{interaction.User.Username}: Started the game!");
+							
 							using (this.cancelJoinWait)
 							{
 								this.cancelJoinWait.Cancel();
@@ -103,12 +126,14 @@ namespace Mayfly.Services.Trivia
 						}
 					}
 					break;
-
-					case "➕":
+		
+					case "join":
 					{
-						if (!this.Players.ContainsKey(reaction.User.Value.Id))
+						Console.WriteLine($"{interaction.User.Username}: Joined!");
+						
+						if (!this.Players.ContainsKey(interaction.User.Id))
 						{
-							this.Players.TryAdd(reaction.User.Value.Id, new TriviaPlayer(reaction.User.Value.Username));
+							this.Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
 						}
 					}
 					break;
@@ -116,10 +141,12 @@ namespace Mayfly.Services.Trivia
 			}
 			else
 			{
-				if (this.Players.TryGetValue(reaction.User.Value.Id, out TriviaPlayer player))
+				if (this.Players.TryGetValue(interaction.User.Id, out TriviaPlayer player))
 				{
-					if (this.answerDict.TryGetValue(reaction.Emote, out string answer) && !player.HasChosen)
+					if (this.answerDict.TryGetValue(OptionToEmote(interaction.Data.CustomId), out string answer) && !player.HasChosen)
 					{
+						Console.WriteLine($"{interaction.User.Username}: Chose -> {answer}");
+						
 						if (answer == this.question.CorrectAnswer)
 						{
 							player.Correct++;
@@ -131,10 +158,10 @@ namespace Mayfly.Services.Trivia
 							player.Wrong++;
 							player.Streak = 0;
 						}
-
+		
 						player.HasChosen = true;
 						this.answered++;
-
+		
 						if (this.answered == this.Players.Count)
 						{
 							this.answered = 0;
@@ -155,31 +182,28 @@ namespace Mayfly.Services.Trivia
 				}
 
 				this.answerDict.Clear();
-				await this.message.RemoveAllReactionsAsync();
 				this.question = triviaQuestion;
 
 				if (triviaQuestion.IsBoolean)
 				{
-					await this.message.AddReactionsAsync(this.TrueFalseEmotes);
-					this.answerDict.Add(this.TrueFalseEmotes[0], "True");
-					this.answerDict.Add(this.TrueFalseEmotes[1], "False");
+					this.answerDict.Add(TRUE_EMOJI, "True");
+					this.answerDict.Add(FALSE_EMOJI, "False");
 				}
 				else
 				{
 					string[] shuffled = triviaQuestion.ShuffledItems;
-					await this.message.AddReactionsAsync(this.MultiChoiceEmotes);
 
-					for (int i = 0; i < this.MultiChoiceEmotes.Length; i++)
-					{
-						this.answerDict.Add(this.MultiChoiceEmotes[i], HttpUtility.HtmlDecode(shuffled[i]));
-					}
+					this.answerDict.Add(A_EMOJI, shuffled[0]);
+					this.answerDict.Add(B_EMOJI, shuffled[1]);
+					this.answerDict.Add(C_EMOJI, shuffled[2]);
+					this.answerDict.Add(D_EMOJI, shuffled[3]);
 				}
 
 				EmbedBuilder builder = new EmbedBuilder()
 				{
 					Title = HttpUtility.HtmlDecode(triviaQuestion.Category),
 					Description = HttpUtility.HtmlDecode(triviaQuestion.Question),
-					Fields = this.answerDict.Select(x => new EmbedFieldBuilder().WithIsInline(true).WithName(x.Key.Name).WithValue(x.Value)).ToList(),
+					Fields = this.answerDict.Select(x => new EmbedFieldBuilder().WithIsInline(true).WithName(x.Key).WithValue(x.Value)).ToList(),
 					Color = triviaQuestion.Difficulty switch
 					{
 						"easy"   => Color.Green,
@@ -189,7 +213,11 @@ namespace Mayfly.Services.Trivia
 					}
 				};
 
-				await this.message.ModifyAsync(m => m.Embed = builder.Build());
+				await this.message.ModifyAsync(m =>
+				{
+					m.Embed = builder.Build();
+					m.Components = this.question.IsBoolean ? TrueFalseComponent : MultiChoiceComponent;
+				});
 
 				try
 				{
@@ -199,11 +227,11 @@ namespace Mayfly.Services.Trivia
 
 				string answer = "Correct answer: " + HttpUtility.HtmlDecode(triviaQuestion.CorrectAnswer);
 
-				foreach ((IEmote key, string value) in this.answerDict)
+				foreach ((string key, string value) in this.answerDict)
 				{
 					if (value == HttpUtility.HtmlDecode(triviaQuestion.CorrectAnswer))
 					{
-						answer += $" ({key.Name})";
+						answer += $" ({key})";
 						break;
 					}
 				}
@@ -219,7 +247,6 @@ namespace Mayfly.Services.Trivia
 				await Task.Delay(3000);
 			}
 
-			await this.message.RemoveAllReactionsAsync();
 			await this.message.ModifyAsync(x => x.Embed = new EmbedBuilder()
 			{
 				Title = "Game Results!",

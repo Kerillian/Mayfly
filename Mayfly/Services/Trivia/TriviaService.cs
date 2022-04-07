@@ -15,36 +15,26 @@ namespace Mayfly.Services.Trivia
 		{
 			this.discord = dsc;
 			this.http = hh;
-			this.discord.ReactionAdded += this.HandleReactions;
+
+			this.discord.ButtonExecuted += HandleButtons;
 		}
 
-		public Task HandleReactions(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
+		private async Task HandleButtons(SocketMessageComponent interaction)
 		{
-			if (!message.HasValue || !reaction.User.IsSpecified)
+			if (interaction.Channel is SocketTextChannel text && this.sessions.TryGetValue(text.Guild.Id, out TriviaSession session))
 			{
-				return Task.CompletedTask;
+				await interaction.DeferAsync();
+				session.HandleButtons(interaction);
 			}
-
-			if (reaction.UserId == this.discord.CurrentUser.Id)
-			{
-				return Task.CompletedTask;
-			}
-
-			if (channel.Value is SocketTextChannel text && this.sessions.TryGetValue(text.Guild.Id, out TriviaSession session))
-			{
-				session.HandleReaction(message.Value, reaction);
-			}
-
-			return Task.CompletedTask;
 		}
 
 		public async Task<bool> NewSession(SocketInteractionContext ctx, TriviaOptions options)
 		{
 			if (!this.sessions.ContainsKey(ctx.Guild.Id))
 			{
-				TriviaSession session = new TriviaSession(this.http, ctx.Interaction, ctx.Channel, ctx.User.Id);
+				TriviaSession session = new TriviaSession(this.http, ctx.User.Id);
 				this.sessions.TryAdd(ctx.Guild.Id, session);
-				await session.Setup(options);
+				await session.Setup(ctx.Interaction, options);
 				await session.StartTimeout();
 
 				this.sessions.TryRemove(ctx.Guild.Id, out session);

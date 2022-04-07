@@ -391,7 +391,7 @@ namespace Mayfly.Modules
 			
 			return MayflyResult.FromSuccess();
 		}
-		
+
 		[SlashCommand("shuffle", "Shuffle track queue.")]
 		public async Task<RuntimeResult> Shuffle()
 		{

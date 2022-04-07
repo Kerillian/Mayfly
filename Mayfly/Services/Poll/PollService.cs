@@ -12,23 +12,21 @@ namespace Mayfly.Services.Poll
 		public PollService(DiscordSocketClient dsc)
 		{
 			this.discord = dsc;
-			this.discord.ReactionAdded += this.HandleReactions;
+			//this.discord.ReactionAdded += this.HandleReactions;
+			this.discord.ButtonExecuted += this.HandleButtons;
 		}
 
-		public async Task HandleReactions(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
+		private async Task HandleButtons(SocketMessageComponent interaction)
 		{
-			if (!message.HasValue || reaction.UserId == this.discord.CurrentUser.Id)
+			if (this.pollData.TryGetValue(interaction.Message.Id, out Poll poll) && !poll.Voters.Contains(interaction.User.Id))
 			{
-				return;
-			}
-
-			if (this.pollData.TryGetValue(message.Id, out Poll poll) && !poll.Voters.Contains(reaction.UserId))
-			{
-				if (poll.Options.TryGetValue(reaction.Emote, out PollOption option))
+				await interaction.DeferAsync();
+				
+				if (poll.Options.TryGetValue(new Emoji(interaction.Data.CustomId), out PollOption option))
 				{
 					option.Votes++;
 					poll.TotalVotes++;
-					poll.Voters.Add(reaction.UserId);
+					poll.Voters.Add(interaction.User.Id);
 					await poll.Update();
 				}
 			}

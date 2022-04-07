@@ -252,13 +252,59 @@ namespace Mayfly.Modules
 				return MayflyResult.FromSuccess();
 			}
 
-			return MayflyResult.FromError("LoadFailed", "Failed to load image.");
+			return MayflyResult.FromError("LoadFailed", "Failed to load avatar.");
 		}
 
 		[UserCommand("jar")]
-		public async Task JarUser(IUser user)
+		public async Task JarContext(IUser user)
 		{
 			await Jar(user);
+		}
+
+		// Avatar = 135
+		// wilson = 72, 301
+		// cuomo  = 349, 363
+		// sharp  = 604, 321
+		// bell   = 857, 336
+		// These are not magic numbers! I used image editing software to draw squares and figure out where to draw the avatars.
+		[SlashCommand("weezer", "Weezer moment. (Thanks Allie, and Nykane <3)")]
+		public async Task<RuntimeResult> Weezer(IUser wilson, IUser cuomo, IUser sharp, IUser bell)
+		{
+			await DeferAsync();
+			using Image<Rgba32> wilsonImage = await this.http.GetImageAsync<Rgba32>(wilson.GetAvatarUrl());
+			using Image<Rgba32> cuomoImage = await this.http.GetImageAsync<Rgba32>(cuomo.GetAvatarUrl());
+			using Image<Rgba32> sharpImage = await this.http.GetImageAsync<Rgba32>(sharp.GetAvatarUrl());
+			using Image<Rgba32> bellImage = await this.http.GetImageAsync<Rgba32>(bell.GetAvatarUrl());
+			
+			using Image<Rgba32> weezerImage = Image.Load<Rgba32>("./Media/weezer.png");
+			using Image<Rgba32> baseImage = new Image<Rgba32>(weezerImage.Width, weezerImage.Height);
+
+			if (wilsonImage != null && cuomoImage != null && sharpImage != null && bellImage != null)
+			{
+				wilsonImage.Mutate(x => x.Resize(135, 135));
+				cuomoImage.Mutate(x => x.Resize(135, 135));
+				sharpImage.Mutate(x => x.Resize(135, 135));
+				bellImage.Mutate(x => x.Resize(135, 135));
+				
+				baseImage.Mutate(x =>
+				{
+					x.DrawImage(wilsonImage, new Point(72, 301), 1f);
+					x.DrawImage(cuomoImage, new Point(349, 363), 1f);
+					x.DrawImage(sharpImage, new Point(604, 321), 1f);
+					x.DrawImage(bellImage, new Point(857, 336), 1f);
+					
+					x.DrawImage(weezerImage, new Point(0, 0), 1f);
+				});
+				
+				await using MemoryStream stream = new MemoryStream();
+				await baseImage.SaveAsPngAsync(stream);
+				stream.Seek(0, SeekOrigin.Begin);
+
+				await this.FollowupWithFileAsync(stream, "weezer.png");
+				return MayflyResult.FromSuccess();
+			}
+			
+			return MayflyResult.FromError("LoadFailed", "Failed to load avatar(s).");
 		}
 		
 		[SlashCommand("deepfry", "Deepfry images.")]
