@@ -219,20 +219,18 @@ namespace Mayfly.Modules
 			{
 				if (json.StartString.StartsWith('-'))
 				{
-					StringBuilder builder = new StringBuilder();
-				
-					foreach (VoidTraderItem item in json.Inventory)
+					TableBuilder table = new TableBuilder("Item", "Ducats", "Credits");
+
+					foreach (VoidTraderItem item in json.Inventory.OrderBy(x => x.Item))
 					{
-						builder.AppendLine($"# {item.Item}");
-						builder.AppendLine($"{item.Ducats:#,0}d, {item.Credits:#,0}c");
-						builder.AppendLine();
+						table.AddRow(item.Item, item.Ducats.ToString("n0"), item.Credits.ToString("n0"));
 					}
 
 					await FollowupAsync(embed: new EmbedBuilder()
 					{
 						Title = "Baro Ki'Teer's inventory",
 						Color = new Color(0xFFC83D),
-						Description = Format.Code(builder.ToString(), "markdown")
+						Description = Format.Code(table.Build())
 					}.Build());
 				}
 				else
