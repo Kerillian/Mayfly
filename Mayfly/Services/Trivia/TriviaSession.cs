@@ -2,8 +2,8 @@ using System.Web;
 using System.Collections.Concurrent;
 using Discord;
 using Discord.WebSocket;
-using Mayfly.Extensions;
 using Mayfly.Structures;
+using Mayfly.Utilities;
 
 namespace Mayfly.Services.Trivia
 {
@@ -25,6 +25,7 @@ namespace Mayfly.Services.Trivia
 		private readonly ulong host;
 		private CancellationTokenSource cancelQuestionWait = new CancellationTokenSource();
 		private CancellationTokenSource cancelJoinWait = new CancellationTokenSource();
+		private CancellationTokenSource cancelDeleted = new CancellationTokenSource();
 
 		private readonly Embed presetEmbed = new EmbedBuilder()
 		{
@@ -74,12 +75,28 @@ namespace Mayfly.Services.Trivia
 			};
 		}
 
+		public bool IsMyMessage(ulong id)
+		{
+			return message.Id == id;
+		}
+
+		public void ForceStop()
+		{
+			using (this.cancelDeleted)
+			{
+				this.cancelDeleted.Cancel();
+				this.cancelQuestionWait.Cancel();
+				this.cancelJoinWait.Cancel();
+			}
+		}
+
 		public async Task Setup(SocketInteraction interaction, TriviaOptions options)
 		{
 			await interaction.RespondAsync(embed: presetEmbed, components: WaitingComponent);
 			this.message = await interaction.GetOriginalResponseAsync();
 			this.trivia = await this.http.GetJsonAsync<TriviaResult>(options.Build());
-
+			this.Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
+			
 			try
 			{
 				await Task.Delay(30000, this.cancelJoinWait.Token);
@@ -155,8 +172,13 @@ namespace Mayfly.Services.Trivia
 						}
 						else
 						{
-							player.Wrong++;
+							if (player.Streak > player.BestStreak)
+							{
+								player.BestStreak = player.Streak;
+							}
+							
 							player.Streak = 0;
+							player.Wrong++;
 						}
 		
 						player.HasChosen = true;
@@ -176,6 +198,11 @@ namespace Mayfly.Services.Trivia
 		{
 			foreach (TriviaQuestion triviaQuestion in this.trivia.Results)
 			{
+				if (this.cancelDeleted.IsCancellationRequested)
+				{
+					return;
+				}
+				
 				foreach (TriviaPlayer player in this.Players.Values)
 				{
 					player.HasChosen = false;
@@ -247,12 +274,23 @@ namespace Mayfly.Services.Trivia
 				await Task.Delay(3000);
 			}
 
-			await this.message.ModifyAsync(x => x.Embed = new EmbedBuilder()
+			TableBuilder table = new TableBuilder("Username", "Score", "Correct", "Wrong");
+
+			foreach (TriviaPlayer player in this.Players.OrderByDescending(x => x.Value.Score).Take(10).Select(x => x.Value))
 			{
-				Title = "Game Results!",
-				Description = "Here are the top 10 winners!",
-				Fields = this.Players.Take(10).OrderByDescending(y => y.Value.Score).Select(z => new EmbedFieldBuilder().WithIsInline(true).WithName(z.Value.Username).WithValue("Score: " + z.Value.Score)).ToList()
-			}.Build());
+				table.AddRow(player.Username, player.Score.ToString(), player.Correct.ToString(), player.Wrong.ToString());
+			}
+
+			await this.message.ModifyAsync(x =>
+			{
+				x.Components = null;
+				x.Embed = new EmbedBuilder()
+				{
+					Title = "Game Results!",
+					Color = Color.Blue,
+					Description = "Top 10 best scoring players!\n" + Format.Code(table.Build()),
+				}.Build();
+			});
 		}
 	}
 }

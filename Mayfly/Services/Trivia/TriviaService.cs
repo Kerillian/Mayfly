@@ -17,6 +17,21 @@ namespace Mayfly.Services.Trivia
 			this.http = hh;
 
 			this.discord.ButtonExecuted += HandleButtons;
+			this.discord.MessageDeleted += OnMessageDeleted;
+		}
+
+		private Task OnMessageDeleted(Cacheable<IMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel)
+		{
+			foreach (KeyValuePair<ulong,TriviaSession> pair in sessions)
+			{
+				if (pair.Value.IsMyMessage(message.Id))
+				{
+					pair.Value.ForceStop();
+					break;
+				}
+			}
+
+			return Task.CompletedTask;
 		}
 
 		private async Task HandleButtons(SocketMessageComponent interaction)
@@ -34,8 +49,13 @@ namespace Mayfly.Services.Trivia
 			{
 				TriviaSession session = new TriviaSession(this.http, ctx.User.Id);
 				this.sessions.TryAdd(ctx.Guild.Id, session);
-				await session.Setup(ctx.Interaction, options);
-				await session.StartTimeout();
+
+				try
+				{
+					await session.Setup(ctx.Interaction, options);
+					await session.StartTimeout();
+				}
+				catch { /* ignore */ }
 
 				this.sessions.TryRemove(ctx.Guild.Id, out session);
 				return true;

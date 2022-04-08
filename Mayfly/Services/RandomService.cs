@@ -6,10 +6,21 @@ namespace Mayfly.Services
 {
 	public class RandomService : Random
 	{
-		private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
+		[Flags]
+		public enum RandomStringTypes : ushort
+		{
+			AlphaLower = 0,
+			AlphaUpper = 1,
+			Numeric = 2,
+			Symbols = 4
+		}
+		
+		public const RandomStringTypes ALL = RandomStringTypes.AlphaLower | RandomStringTypes.AlphaUpper | RandomStringTypes.Numeric | RandomStringTypes.Symbols;
 		private const string Alpha = "abcdefghijklmnopqrstuvwxyz";
 		private const string Numeric = "1234567890";
 		private const string Symbols = "!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?`~";
+		
+		private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
 
 		public override int Next(int min, int max)
 		{
@@ -85,24 +96,38 @@ namespace Mayfly.Services
 			return this.Next(1, sides);
 		}
 
-		public string String(int length)
+		public string Shuffle(string str)
 		{
-			return string.Concat(Enumerable.Repeat(Alpha + Numeric + Symbols + Alpha.ToUpper(), length).Select(s => s[this.Next(s.Length)]));
-		}
-		
-		public string AlphaString(int length)
-		{
-			return string.Concat(Enumerable.Repeat(Alpha, length).Select(s => s[this.Next(s.Length)]));
+			return string.Concat(str.OrderBy(c => this.Next()));
 		}
 
-		public string NumericString(int length)
+		public string String(int length, RandomStringTypes types)
 		{
-			return string.Concat(Enumerable.Repeat(Numeric, length).Select(s => s[this.Next(s.Length)]));
-		}
+			string temp = "";
+
+			if (types.HasFlag(RandomStringTypes.AlphaLower))
+			{
+				temp += Alpha;
+			}
 			
-		public string AlphanumericString(int length)
-		{
-			return string.Concat(Enumerable.Repeat(Alpha + Numeric, length).Select(s => s[this.Next(s.Length)]));
+			if (types.HasFlag(RandomStringTypes.AlphaUpper))
+			{
+				temp += Alpha.ToUpper();
+			}
+			
+			if (types.HasFlag(RandomStringTypes.Numeric))
+			{
+				temp += Numeric;
+			}
+
+			if (types.HasFlag(RandomStringTypes.Symbols))
+			{
+				temp += Symbols;
+			}
+
+			temp = Shuffle(temp);
+
+			return string.Concat(Enumerable.Repeat(temp, length).Select(s => s[this.Next(s.Length)]));
 		}
 	}
 }

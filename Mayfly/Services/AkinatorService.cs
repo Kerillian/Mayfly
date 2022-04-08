@@ -35,15 +35,7 @@ namespace Mayfly.Services
 			await this.Message.ModifyAsync(msg =>
 			{
 				msg.Embed = this.Embed.Build();
-
-				if (stop)
-				{
-					msg.Components = null;
-				}
-				else
-				{
-					msg.Components = components.Build();
-				}
+				msg.Components = stop ? null : components.Build();
 			});
 		}
 	}
@@ -137,7 +129,7 @@ namespace Mayfly.Services
 			{
 				pair.Embed.Color = Color.Red;
 				pair.Embed.Title = "Guac";
-				pair.Embed.Description = "A man of pure enigmatic power";
+				pair.Embed.Description = "A man of pure enigmatic power.\n\n(_The Genie couldn't find your character, sorry :/)_";
 				pair.Embed.ImageUrl = "https://i.imgur.com/ghcq4lo.png";
 				await this.Stop(pair);
 				return;
@@ -165,7 +157,7 @@ namespace Mayfly.Services
 				{
 					pair.Embed.Color = Color.Red;
 					pair.Embed.Title = "Guac";
-					pair.Embed.Description = "A man of pure enigmatic power";
+					pair.Embed.Description = "A man of pure enigmatic power.\n\n(_The Genie couldn't find your character, sorry :/)_";
 					pair.Embed.ImageUrl = "https://i.imgur.com/ghcq4lo.png";
 					await this.Stop(pair);
 				}
@@ -189,7 +181,6 @@ namespace Mayfly.Services
 					pair.Embed.Title = "";
 					pair.Embed.Color = Color.Red;
 					await pair.UpdateMessage(components, true);
-					await pair.Message.RemoveAllReactionsAsync();
 					pair.Client.Dispose();
 					this.Clients.TryRemove(pair.UserId, out ClientUserPair _);
 				}
