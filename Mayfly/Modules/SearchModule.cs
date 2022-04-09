@@ -168,7 +168,7 @@ namespace Mayfly.Modules
 				builder.AppendLine("SteamID64 : " + profile.SteamId64);
 				builder.AppendLine("Aliases   : " + (profile.Aliases != null ? string.Join(", ", profile.Aliases) : "None"));
 				
-				await this.FollowupAsync(embed: new EmbedBuilder()
+				await FollowupAsync(embed: new EmbedBuilder()
 				{
 					Title = profile.Username,
 					Description = Format.Code(builder.ToString()),
@@ -191,7 +191,7 @@ namespace Mayfly.Modules
 			string start = hash[..5];
 			int times = 0;
 
-			await using Stream stream = await this.Http.GetStreamAsync("https://api.pwnedpasswords.com/range/" + start);
+			await using Stream stream = await Http.GetStreamAsync("https://api.pwnedpasswords.com/range/" + start);
 			using StreamReader reader = new StreamReader(stream);
 			
 			while (!reader.EndOfStream)
@@ -206,7 +206,7 @@ namespace Mayfly.Modules
 				}
 			}
 
-			await this.FollowupAsync($"Found that password `{times:#,0}` {(times == 1 ? "time." : "times.")}");
+			await FollowupAsync($"Found that password `{times:#,0}` {(times == 1 ? "time." : "times.")}");
 		}
 
 		[SlashCommand("baro", "Is Baro Ki'Teer here?")]

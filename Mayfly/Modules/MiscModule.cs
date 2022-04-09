@@ -17,8 +17,8 @@ namespace Mayfly.Modules
 		public async Task TPDNE()
 		{
 			await DeferAsync();
-			await using Stream stream = await this.Http.GetStreamAsync("https://thispersondoesnotexist.com/image");
-			await this.FollowupWithFileAsync(stream, "person.jpg");
+			await using Stream stream = await Http.GetStreamAsync("https://thispersondoesnotexist.com/image");
+			await FollowupWithFileAsync(stream, "person.jpg");
 		}
 		
 		[SlashCommand("twdne", "https://www.thiswaifudoesnotexist.net/")]
@@ -28,13 +28,13 @@ namespace Mayfly.Modules
 			
 			if (Random.Chance())
 			{
-				await using Stream stream = await this.Http.GetStreamAsync($"https://www.thiswaifudoesnotexist.net/example-{this.Random.Next(0, 100000)}.jpg");
-				await this.FollowupWithFileAsync(stream, "anime.jpg");
+				await using Stream stream = await Http.GetStreamAsync($"https://www.thiswaifudoesnotexist.net/example-{Random.Next(0, 100000)}.jpg");
+				await FollowupWithFileAsync(stream, "anime.jpg");
 			}
 			else
 			{
 				await using Stream stream = await Waifulabs.GetImageStream();
-				await this.FollowupWithFileAsync(stream, "anime.png");
+				await FollowupWithFileAsync(stream, "anime.png");
 			}
 		}
 

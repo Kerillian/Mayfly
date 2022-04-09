@@ -12,7 +12,7 @@ namespace Mayfly.Services.Trivia
 
 		public TriviaPlayer(string username)
 		{
-			this.Username = username;
+			Username = username;
 		}
 	}
 }

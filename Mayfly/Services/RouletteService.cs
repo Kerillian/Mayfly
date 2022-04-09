@@ -13,8 +13,8 @@ namespace Mayfly.Services
 
 		public RouletteClient(RandomService random)
 		{
-			this.CurrentChamber = (byte)random.Next(1, 6);
-			this.ChamberedBullet = (byte)random.Next(1, 6);
+			CurrentChamber = (byte)random.Next(1, 6);
+			ChamberedBullet = (byte)random.Next(1, 6);
 		}
 	}
 
@@ -29,7 +29,7 @@ namespace Mayfly.Services
 
 		public RouletteService(RandomService rs, DiscordSocketClient client)
 		{
-			this.random = rs;
+			random = rs;
 			client.UserJoined += OnJoined;
 		}
 
@@ -53,10 +53,10 @@ namespace Mayfly.Services
 				return;
 			}
 			
-			if (!this.clients.TryGetValue(context.Channel.Id, out RouletteClient client))
+			if (!clients.TryGetValue(context.Channel.Id, out RouletteClient client))
 			{
 				client = new RouletteClient(random);
-				this.clients.TryAdd(context.Channel.Id, client);
+				clients.TryAdd(context.Channel.Id, client);
 			}
 
 			if (client.CurrentChamber == client.ChamberedBullet)
@@ -97,11 +97,11 @@ namespace Mayfly.Services
 					await context.Interaction.RespondAsync(embed: whizEmbed);
 				}
 
-				this.clients.TryRemove(context.Channel.Id, out RouletteClient _);
+				clients.TryRemove(context.Channel.Id, out RouletteClient _);
 				return;
 			}
 
-			await context.Interaction.RespondAsync(embed: this.clickEmbed);
+			await context.Interaction.RespondAsync(embed: clickEmbed);
 
 			if (++client.CurrentChamber > 6)
 			{

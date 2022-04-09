@@ -41,13 +41,13 @@ namespace Mayfly.Utilities
 
 		public TableBuilder(TableDesign design, params string[] headers)
 		{
-			this.design = design;
-			this.tableHeaders = headers;
-			this.sizes = new int[headers.Length];
+			design = design;
+			tableHeaders = headers;
+			sizes = new int[headers.Length];
 
-			for (int i = 0; i < this.tableHeaders.Length; i++)
+			for (int i = 0; i < tableHeaders.Length; i++)
 			{
-				this.sizes[i] = this.tableHeaders[i].Length;
+				sizes[i] = tableHeaders[i].Length;
 			}
 		}
 
@@ -62,26 +62,26 @@ namespace Mayfly.Utilities
 			{
 				for (int i = 0; i < row.Length; i++)
 				{
-					if (row[i].Length > this.sizes[i])
+					if (row[i].Length > sizes[i])
 					{
-						this.sizes[i] = row[i].Length;
+						sizes[i] = row[i].Length;
 					}
 				}
 				
-				this.tableRows.Add(row);
+				tableRows.Add(row);
 			}
 		}
 
 		private string BuildTemplate()
 		{
-			string[] parts = new string[this.sizes.Length];
+			string[] parts = new string[sizes.Length];
 
-			for (int i = 0; i < this.sizes.Length; i++)
+			for (int i = 0; i < sizes.Length; i++)
 			{
-				parts[i] = $"{{{i},-{this.sizes[i]}}}";
+				parts[i] = $"{{{i},-{sizes[i]}}}";
 			}
 			
-			return $"{this.design.Vertical} {string.Join($" {this.design.Vertical} ", parts)} {this.design.Vertical}\n";
+			return $"{design.Vertical} {string.Join($" {design.Vertical} ", parts)} {design.Vertical}\n";
 		}
 
 		private string BuildFiller(char left, char connector, char right)
@@ -90,11 +90,11 @@ namespace Mayfly.Utilities
 
 			builder.Append(left);
 
-			for (int i = 0; i < this.sizes.Length; i++)
+			for (int i = 0; i < sizes.Length; i++)
 			{
-				builder.Append(new string(this.design.Horizontal, this.sizes[i] + 2));
+				builder.Append(new string(design.Horizontal, sizes[i] + 2));
 
-				if (i != this.sizes.Length - 1)
+				if (i != sizes.Length - 1)
 				{
 					builder.Append(connector);
 				}
@@ -108,16 +108,16 @@ namespace Mayfly.Utilities
 			StringBuilder builder = new StringBuilder();
 			string template = BuildTemplate();
 
-			builder.AppendLine(this.BuildFiller(this.design.TopLeft, this.design.TopConnector, this.design.TopRight));
-			builder.AppendFormat(template, this.tableHeaders);
-			builder.AppendLine(this.BuildFiller(this.design.HeaderLeft, this.design.HeaderConnector, this.design.HeaderRight));
+			builder.AppendLine(BuildFiller(design.TopLeft, design.TopConnector, design.TopRight));
+			builder.AppendFormat(template, tableHeaders);
+			builder.AppendLine(BuildFiller(design.HeaderLeft, design.HeaderConnector, design.HeaderRight));
 
-			foreach (string[] row in this.tableRows)
+			foreach (string[] row in tableRows)
 			{
 				builder.AppendFormat(template, row);
 			}
 
-			builder.AppendLine(this.BuildFiller(this.design.BottomLeft, this.design.BottomConnector, this.design.BottomRight));
+			builder.AppendLine(BuildFiller(design.BottomLeft, design.BottomConnector, design.BottomRight));
 			return builder.ToString();
 		}
 	}

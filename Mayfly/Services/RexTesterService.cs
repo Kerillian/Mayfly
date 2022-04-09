@@ -60,7 +60,7 @@ namespace Mayfly.Services
 
 		public RexTesterService(HttpService hs)
 		{
-			this.http = hs;
+			http = hs;
 		}
 		
 		public static RexLanguage GetLanguageFromString(string lang) => lang switch
@@ -136,7 +136,7 @@ namespace Mayfly.Services
 				})
 			};
 
-			HttpResponseMessage response = await this.http.SendAsync(request);
+			HttpResponseMessage response = await http.SendAsync(request);
 			
 			if (response.IsSuccessStatusCode)
 			{

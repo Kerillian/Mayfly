@@ -14,6 +14,6 @@ namespace Mayfly.Structures
 		public string Message { get; set; }
 
 		[JsonIgnore]
-		public ulong? SteamId64 => ulong.TryParse(this.SteamId, out ulong id) ? id : (ulong?)null;
+		public ulong? SteamId64 => ulong.TryParse(SteamId, out ulong id) ? id : (ulong?)null;
 	}
 }

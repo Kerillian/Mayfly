@@ -25,14 +25,14 @@ namespace Mayfly.Structures
 		public string[] IncorrectAnswers { get; set; }
 
 		[JsonIgnore]
-		public bool IsBoolean => this.Type == "boolean";
+		public bool IsBoolean => Type == "boolean";
 
 		[JsonIgnore]
-		public string[] ShuffledItems => this.IncorrectAnswers.Append(this.CorrectAnswer).OrderBy(a => Guid.NewGuid()).ToArray();
+		public string[] ShuffledItems => IncorrectAnswers.Append(CorrectAnswer).OrderBy(a => Guid.NewGuid()).ToArray();
 
 		public bool IsCorrect(string answer)
 		{
-			return answer == this.CorrectAnswer;
+			return answer == CorrectAnswer;
 		}
 	}
 }

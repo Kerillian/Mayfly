@@ -13,8 +13,8 @@ namespace Mayfly.Services
 
 		public HttpService()
 		{
-			this.Timeout = new TimeSpan(0, 0, 10);
-			this.MaxResponseContentBufferSize = 8000000; // Limit for non-nitro users. (8mb)
+			Timeout = new TimeSpan(0, 0, 10);
+			MaxResponseContentBufferSize = 8000000; // Limit for non-nitro users. (8mb)
 		}
 
 		public async Task<Image<T>> GetImageAsync<T>(string url) where T : unmanaged, IPixel<T>
@@ -26,7 +26,7 @@ namespace Mayfly.Services
 
 			try
 			{
-				using HttpResponseMessage response = await this.GetAsync(ProxyUrl + Uri.EscapeDataString(url));
+				using HttpResponseMessage response = await GetAsync(ProxyUrl + Uri.EscapeDataString(url));
 				string mt = response.Content.Headers.ContentType?.MediaType;
 
 				if (mt != null && response.IsSuccessStatusCode && mt.Contains("image/") && !mt.Contains("gif"))
@@ -48,7 +48,7 @@ namespace Mayfly.Services
 		{
 			try
 			{
-				using HttpResponseMessage response = await this.GetAsync(ProxyUrl + Uri.EscapeDataString(url));
+				using HttpResponseMessage response = await GetAsync(ProxyUrl + Uri.EscapeDataString(url));
 				string mt = response.Content.Headers.ContentType?.MediaType;
 
 				if (mt != null && response.IsSuccessStatusCode && mt.Contains("image/gif"))
@@ -68,7 +68,7 @@ namespace Mayfly.Services
 		{
 			try
 			{
-				using HttpResponseMessage response = await this.GetAsync(ProxyUrl + Uri.EscapeDataString(url));
+				using HttpResponseMessage response = await GetAsync(ProxyUrl + Uri.EscapeDataString(url));
 				string mt = response.Content.Headers.ContentType?.MediaType;
 				
 				if (mt == "image/png")
@@ -88,7 +88,7 @@ namespace Mayfly.Services
 		{
 			try
 			{
-				return JObject.Parse(await this.GetStringAsync(url));
+				return JObject.Parse(await GetStringAsync(url));
 			}
 			catch
 			{
@@ -100,7 +100,7 @@ namespace Mayfly.Services
 		{
 			try
 			{
-				return JArray.Parse(await this.GetStringAsync(url));
+				return JArray.Parse(await GetStringAsync(url));
 			}
 			catch
 			{
@@ -113,7 +113,7 @@ namespace Mayfly.Services
 		{
 			try
 			{
-				return JsonConvert.DeserializeObject<T>(await this.GetStringAsync(url), new JsonSerializerSettings()
+				return JsonConvert.DeserializeObject<T>(await GetStringAsync(url), new JsonSerializerSettings()
 				{
 					MissingMemberHandling = MissingMemberHandling.Ignore,
 					StringEscapeHandling = StringEscapeHandling.EscapeHtml
@@ -131,7 +131,7 @@ namespace Mayfly.Services
 			try
 			{
 				StringContent content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
-				HttpResponseMessage response = await this.PostAsync(url, content);
+				HttpResponseMessage response = await PostAsync(url, content);
 
 				return JsonConvert.DeserializeObject<V>(await response.Content.ReadAsStringAsync(), new JsonSerializerSettings()
 				{
@@ -155,7 +155,7 @@ namespace Mayfly.Services
 			};
 
 			StringContent content = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
-			HttpResponseMessage response = await this.PostAsync(url, content);
+			HttpResponseMessage response = await PostAsync(url, content);
 			JObject data = JObject.Parse(await response.Content.ReadAsStringAsync());
 
 			return data["data"]?.Value<JObject>();

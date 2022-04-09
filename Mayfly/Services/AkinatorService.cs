@@ -19,12 +19,12 @@ namespace Mayfly.Services
 
 		public ClientUserPair(AkinatorClient client, ulong id, IUserMessage message)
 		{
-			this.Client = client;
-			this.UserId = id;
-			this.Message = message;
-			this.LastUsed = DateTime.Now.AddMinutes(2);
+			Client = client;
+			UserId = id;
+			Message = message;
+			LastUsed = DateTime.Now.AddMinutes(2);
 
-			this.Embed = new EmbedBuilder()
+			Embed = new EmbedBuilder()
 			{
 				Color = new Color(255, 185, 12)
 			};
@@ -32,9 +32,9 @@ namespace Mayfly.Services
 
 		public async Task UpdateMessage(ComponentBuilder components, bool stop = false)
 		{
-			await this.Message.ModifyAsync(msg =>
+			await Message.ModifyAsync(msg =>
 			{
-				msg.Embed = this.Embed.Build();
+				msg.Embed = Embed.Build();
 				msg.Components = stop ? null : components.Build();
 			});
 		}
@@ -58,22 +58,22 @@ namespace Mayfly.Services
 
 		public AkinatorService(DiscordSocketClient dsc)
 		{
-			this.discord = dsc;
-			this.Clients = new ConcurrentDictionary<ulong, ClientUserPair>();
+			discord = dsc;
+			Clients = new ConcurrentDictionary<ulong, ClientUserPair>();
 
-			this.discord.ButtonExecuted += this.HandleButtons;
+			discord.ButtonExecuted += HandleButtons;
 		}
 
 		private async Task HandleButtons(SocketMessageComponent component)
 		{
-			if (this.Clients.TryGetValue(component.User.Id, out ClientUserPair pair))
+			if (Clients.TryGetValue(component.User.Id, out ClientUserPair pair))
 			{
 				await component.DeferAsync();
 				
 				if (!pair.Requesting && component.User.Id == pair.UserId)
 				{
 					pair.Requesting = true;
-					await this.UpdateClient(pair, component.Data.CustomId);
+					await UpdateClient(pair, component.Data.CustomId);
 				}
 			}
 		}
@@ -119,7 +119,7 @@ namespace Mayfly.Services
 						pair.Embed.Description = "Your lamp has been extinguished.";
 						pair.Embed.Title = "";
 						pair.Embed.Color = Color.Red;
-						await this.Stop(pair);
+						await Stop(pair);
 						return;
 				}
 			}
@@ -131,7 +131,7 @@ namespace Mayfly.Services
 				pair.Embed.Title = "Guac";
 				pair.Embed.Description = "A man of pure enigmatic power.\n\n(_The Genie couldn't find your character, sorry :/)_";
 				pair.Embed.ImageUrl = "https://i.imgur.com/ghcq4lo.png";
-				await this.Stop(pair);
+				await Stop(pair);
 				return;
 			}
 
@@ -151,7 +151,7 @@ namespace Mayfly.Services
 					await pair.Message.RemoveAllReactionsAsync();
 					await pair.UpdateMessage(components, true);
 					pair.Client.Dispose();
-					this.Clients.TryRemove(pair.UserId, out ClientUserPair _);
+					Clients.TryRemove(pair.UserId, out ClientUserPair _);
 				}
 				else
 				{
@@ -159,7 +159,7 @@ namespace Mayfly.Services
 					pair.Embed.Title = "Guac";
 					pair.Embed.Description = "A man of pure enigmatic power.\n\n(_The Genie couldn't find your character, sorry :/)_";
 					pair.Embed.ImageUrl = "https://i.imgur.com/ghcq4lo.png";
-					await this.Stop(pair);
+					await Stop(pair);
 				}
 			}
 			else
@@ -173,7 +173,7 @@ namespace Mayfly.Services
 
 		public async Task Cleanup()
 		{
-			foreach (ClientUserPair pair in this.Clients.Values)
+			foreach (ClientUserPair pair in Clients.Values)
 			{
 				if (DateTime.Now > pair.LastUsed)
 				{
@@ -182,18 +182,18 @@ namespace Mayfly.Services
 					pair.Embed.Color = Color.Red;
 					await pair.UpdateMessage(components, true);
 					pair.Client.Dispose();
-					this.Clients.TryRemove(pair.UserId, out ClientUserPair _);
+					Clients.TryRemove(pair.UserId, out ClientUserPair _);
 				}
 			}
 		}
 
 		public async Task<bool> NewSessionAsync(SocketInteractionContext ctx, Language language, ServerType type)
 		{
-			await this.Cleanup();
+			await Cleanup();
 
-			if (!this.Clients.ContainsKey(ctx.User.Id))
+			if (!Clients.ContainsKey(ctx.User.Id))
 			{
-				await ctx.Interaction.RespondAsync(embed: this.presetEmbed, components: components.Build());
+				await ctx.Interaction.RespondAsync(embed: presetEmbed, components: components.Build());
 				IUserMessage message = await ctx.Interaction.GetOriginalResponseAsync();
 				AkinatorServerLocator serverLocator = new AkinatorServerLocator();
 				IAkinatorServer server = await serverLocator.SearchAsync(language, type);
@@ -210,11 +210,11 @@ namespace Mayfly.Services
 				}
 				catch
 				{
-					await this.Stop(pair);
+					await Stop(pair);
 					return false;
 				}
 
-				this.Clients.TryAdd(ctx.User.Id, pair);
+				Clients.TryAdd(ctx.User.Id, pair);
 				await pair.UpdateMessage(components);
 
 				return true;
@@ -227,17 +227,17 @@ namespace Mayfly.Services
 		{
 			await pair.UpdateMessage(components, true);
 			pair.Client.Dispose();
-			return this.Clients.TryRemove(pair.UserId, out ClientUserPair _);
+			return Clients.TryRemove(pair.UserId, out ClientUserPair _);
 		}
 
 		public void Dispose()
 		{
-			foreach (ClientUserPair pair in this.Clients.Values)
+			foreach (ClientUserPair pair in Clients.Values)
 			{
 				pair.Client.Dispose();
 			}
 
-			this.Clients.Clear();
+			Clients.Clear();
 		}
 	}
 }

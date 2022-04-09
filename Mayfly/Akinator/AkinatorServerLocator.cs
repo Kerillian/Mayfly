@@ -70,7 +70,7 @@ namespace Mayfly.Akinator
 			
 			try
 			{
-				this.m_cachedServers ??= await this.LoadServersAsync(cancellationToken).ConfigureAwait(false);
+				m_cachedServers ??= await LoadServersAsync(cancellationToken).ConfigureAwait(false);
 			}
 			finally
 			{

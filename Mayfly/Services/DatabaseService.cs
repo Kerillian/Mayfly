@@ -22,7 +22,7 @@ namespace Mayfly.Services
 
 		public DatabaseService(MayflyContext mc)
 		{
-			this.Context = mc;
+			Context = mc;
 		}
 		
 		/*

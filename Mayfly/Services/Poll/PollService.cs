@@ -11,14 +11,14 @@ namespace Mayfly.Services.Poll
 
 		public PollService(DiscordSocketClient dsc)
 		{
-			this.discord = dsc;
-			//this.discord.ReactionAdded += this.HandleReactions;
-			this.discord.ButtonExecuted += this.HandleButtons;
+			discord = dsc;
+			//discord.ReactionAdded += HandleReactions;
+			discord.ButtonExecuted += HandleButtons;
 		}
 
 		private async Task HandleButtons(SocketMessageComponent interaction)
 		{
-			if (this.pollData.TryGetValue(interaction.Message.Id, out Poll poll) && !poll.Voters.Contains(interaction.User.Id))
+			if (pollData.TryGetValue(interaction.Message.Id, out Poll poll) && !poll.Voters.Contains(interaction.User.Id))
 			{
 				await interaction.DeferAsync();
 				
@@ -42,11 +42,11 @@ namespace Mayfly.Services.Poll
 			Poll poll = new Poll(title, args);
 			
 			await poll.Setup(ctx);
-			this.pollData.Add(poll.Message.Id, poll);
+			pollData.Add(poll.Message.Id, poll);
 			
 			Task _ = Task.Delay(TimeSpan.FromMinutes(10)).ContinueWith(async _ =>
 			{
-				this.pollData.Remove(poll.Message.Id);
+				pollData.Remove(poll.Message.Id);
 				await poll.Finish();
 			});
 

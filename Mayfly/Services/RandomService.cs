@@ -25,7 +25,7 @@ namespace Mayfly.Services
 		public override int Next(int min, int max)
 		{
 			byte[] bytes = new byte[4];
-			this.rng.GetBytes(bytes);
+			rng.GetBytes(bytes);
 			uint scale = BitConverter.ToUInt32(bytes, 0);
 
 			return (int)(min + (max - min) * (scale / (uint.MaxValue + 1.0)));
@@ -33,13 +33,13 @@ namespace Mayfly.Services
 
 		public override int Next(int max)
 		{
-			return this.Next(0, max);
+			return Next(0, max);
 		}
 
 		public float NextFloat()
 		{
 			byte[] bytes = new byte[4];
-			this.rng.GetBytes(bytes);
+			rng.GetBytes(bytes);
 			return BitConverter.ToSingle(bytes, 0);
 		}
 		
@@ -51,54 +51,54 @@ namespace Mayfly.Services
 		public double NextDouble()
 		{
 			byte[] bytes = new byte[8];
-			this.rng.GetBytes(bytes);
+			rng.GetBytes(bytes);
 			return BitConverter.ToDouble(bytes, 0);
 		}
 		
 		public double NextDouble(double min, double max)
 		{
-			return Math.Clamp(this.NextDouble(), min, max);
+			return Math.Clamp(NextDouble(), min, max);
 		}
 
 		public T Pick<T>(T[] array)
 		{
-			return array[this.Next(0, array.Length - 1)];
+			return array[Next(0, array.Length - 1)];
 		}
 
 		public T Pick<T>(List<T> list)
 		{
-			return list[this.Next(0, list.Count - 1)];
+			return list[Next(0, list.Count - 1)];
 		}
 
 		public T Pick<T>(JArray array)
 		{
-			return array[this.Next(0, array.Count - 1)].Value<T>();
+			return array[Next(0, array.Count - 1)].Value<T>();
 		}
 
 		public Match Pick(MatchCollection collection)
 		{
-			return collection[this.Next(0, collection.Count - 1)];
+			return collection[Next(0, collection.Count - 1)];
 		}
 
 		public T Pick<T>(IEnumerable<T> enumerable)
 		{
-			int index = this.Next(0, enumerable.Count() - 1);
+			int index = Next(0, enumerable.Count() - 1);
 			return enumerable.ElementAt(index);
 		}
 
 		public bool Chance(int likelihood = 50)
 		{
-			return this.Sample() * 100 < likelihood;
+			return Sample() * 100 < likelihood;
 		}
 
 		public int Dice(int sides = 6)
 		{
-			return this.Next(1, sides);
+			return Next(1, sides);
 		}
 
 		public string Shuffle(string str)
 		{
-			return string.Concat(str.OrderBy(c => this.Next()));
+			return string.Concat(str.OrderBy(c => Next()));
 		}
 
 		public string String(int length, RandomStringTypes types)
@@ -127,7 +127,7 @@ namespace Mayfly.Services
 
 			temp = Shuffle(temp);
 
-			return string.Concat(Enumerable.Repeat(temp, length).Select(s => s[this.Next(s.Length)]));
+			return string.Concat(Enumerable.Repeat(temp, length).Select(s => s[Next(s.Length)]));
 		}
 	}
 }

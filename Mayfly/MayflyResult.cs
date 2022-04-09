@@ -9,7 +9,7 @@ namespace Mayfly
 
 		public MayflyResult(InteractionCommandError? error, string reason, string message) : base(error, reason)
 		{
-			this.Message = message;
+			Message = message;
 		}
 
 		public static MayflyResult FromError(string reason, string message)

@@ -33,15 +33,15 @@ namespace Mayfly.Services
 			ulong remainder = id - 76561197960265728L;
 			ulong offset = remainder % 2L;
 
-			this.Valid = true;
-			this.SteamId = $"STEAM_0:{offset}:{(remainder - offset) / 2L}";
-			this.SteamId3 = $"U:1:{id - 76561197960265728L}";
-			this.SteamId64 = id.ToString();
+			Valid = true;
+			SteamId = $"STEAM_0:{offset}:{(remainder - offset) / 2L}";
+			SteamId3 = $"U:1:{id - 76561197960265728L}";
+			SteamId64 = id.ToString();
 		}
 
 		public SteamProfile()
 		{
-			this.Valid = false;
+			Valid = false;
 		}
 
 		public async Task Populate(HttpService http, BotConfig cfg)
@@ -50,15 +50,15 @@ namespace Mayfly.Services
 
 			if (json.Players.Count > 0)
 			{
-				this.Username = json.Players[0].PersonaName;
-				this.Avatar = json.Players[0].AvatarFull;
+				Username = json.Players[0].PersonaName;
+				Avatar = json.Players[0].AvatarFull;
 			}
 
 			List<SteamAliases> aliases = await http.GetJsonAsync<List<SteamAliases>>(string.Format(SteamEndPoints.AJAX_ALIASES_URL, SteamId64));
 
 			if (aliases.Count > 0)
 			{
-				this.Aliases = aliases.Select(a => a.NewName).ToArray();
+				Aliases = aliases.Select(a => a.NewName).ToArray();
 			}
 		}
 	}
@@ -70,8 +70,8 @@ namespace Mayfly.Services
 		
 		public SteamService(HttpService hs, BotConfig bc)
 		{
-			this.http = hs;
-			this.config = bc;
+			http = hs;
+			config = bc;
 		}
 		
 		public async Task<SteamProfile> GetSteamID(string str)
@@ -83,7 +83,7 @@ namespace Mayfly.Services
 				if (ulong.TryParse(url.Groups[1].Value, out ulong id))
 				{
 					SteamProfile profile = new SteamProfile(id);
-					await profile.Populate(this.http, this.config);
+					await profile.Populate(http, config);
 					return profile;
 				}
 			}
@@ -92,12 +92,12 @@ namespace Mayfly.Services
 
 			if (vanity.Success)
 			{
-				ResolveVanityResult json = (await this.http.GetJsonAsync<SteamResponse<ResolveVanityResult>>(string.Format(SteamEndPoints.RESOLVE_VANITY_URL, this.config.SteamKey, vanity.Groups[1].Value))).Response;
+				ResolveVanityResult json = (await http.GetJsonAsync<SteamResponse<ResolveVanityResult>>(string.Format(SteamEndPoints.RESOLVE_VANITY_URL, config.SteamKey, vanity.Groups[1].Value))).Response;
 
 				if (json != null && json.Success == 1 && ulong.TryParse(json.SteamId, out ulong id))
 				{
 					SteamProfile profile = new SteamProfile(id);
-					await profile.Populate(this.http, this.config);
+					await profile.Populate(http, config);
 					return profile;
 				}
 			}
@@ -107,7 +107,7 @@ namespace Mayfly.Services
 			if (steam2.Success)
 			{
 				SteamProfile profile = new SteamProfile(76561197960265728L + ulong.Parse(str.Substring(10)) * 2L + ulong.Parse(str.Substring(8, 1)));
-				await profile.Populate(this.http, this.config);
+				await profile.Populate(http, config);
 				return profile;
 			}
 
@@ -116,7 +116,7 @@ namespace Mayfly.Services
 			if (steam3.Success)
 			{
 				SteamProfile profile = new SteamProfile((ulong)(Convert.ToInt64(str.Substring(4)) + 76561197960265728L));
-				await profile.Populate(this.http, this.config);
+				await profile.Populate(http, config);
 				return profile;
 			}
 
@@ -127,7 +127,7 @@ namespace Mayfly.Services
 				if (ulong.TryParse(str, out ulong id))
 				{
 					SteamProfile profile = new SteamProfile(id);
-					await profile.Populate(this.http, this.config);
+					await profile.Populate(http, config);
 					return profile;
 				}
 			}

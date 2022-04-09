@@ -101,7 +101,7 @@ namespace Mayfly.Modules
 			Random.NextBytes(bytes);
 
 			await using Stream stream = new MemoryStream(bytes);
-			await this.RespondWithFileAsync(stream, filename);
+			await RespondWithFileAsync(stream, filename);
 		}
 		
 		[SlashCommand("xkcd", "Gets a random comic from xkcd.com")]

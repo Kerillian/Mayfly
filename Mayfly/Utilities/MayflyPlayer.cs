@@ -14,8 +14,8 @@ namespace Mayfly.Utilities
 
 		public QueueInfo(IUser user, ISocketMessageChannel channel)
 		{
-			this.User = user;
-			this.Channel = channel;
+			User = user;
+			Channel = channel;
 		}
 	}
 	

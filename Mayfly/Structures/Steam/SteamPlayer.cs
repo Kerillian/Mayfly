@@ -23,6 +23,6 @@ namespace Mayfly.Structures
 		public string AvatarFull { get; set; }
 
 		[JsonIgnore]
-		public bool IsVanity => this.ProfileUrl.Contains("/id/");
+		public bool IsVanity => ProfileUrl.Contains("/id/");
 	}
 }

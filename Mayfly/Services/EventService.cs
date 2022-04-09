@@ -18,19 +18,19 @@ namespace Mayfly.Services
 
 		public EventService(DiscordSocketClient dsc, InteractionService @is, BotConfig bc, DatabaseService db, IAudioService ias, ILogger il, IServiceProvider isp)
 		{
-			this.client = dsc;
-			this.interaction = @is;
-			this.config = bc;
-			this.database = db;
-			this.audio = ias;
-			this.logger = il;
-			this.provider = isp;
+			client = dsc;
+			interaction = @is;
+			config = bc;
+			database = db;
+			audio = ias;
+			logger = il;
+			provider = isp;
 			
-			this.client.InteractionCreated += HandleInteraction;
-			this.interaction.SlashCommandExecuted += HandleExecution;
-			this.interaction.Log += OnLogAsync;
+			client.InteractionCreated += HandleInteraction;
+			interaction.SlashCommandExecuted += HandleExecution;
+			interaction.Log += OnLogAsync;
 
-			this.client.Log += OnLogAsync;
+			client.Log += OnLogAsync;
 
 			if (logger is EventLogger log)
 			{

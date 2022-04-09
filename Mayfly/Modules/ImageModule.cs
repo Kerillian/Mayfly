@@ -27,7 +27,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Oil(string url, [MinValue(1), MaxValue(50)] int levels = 25, [MinValue(1), MaxValue(50)] int size = 30)
 		{
 			await DeferAsync();
-			using Image image = await this.http.GetMediaAsync(url);
+			using Image image = await http.GetMediaAsync(url);
 
 			if (image != null)
 			{
@@ -38,7 +38,7 @@ namespace Mayfly.Modules
 				
 				stream.Seek(0, SeekOrigin.Begin);
 				
-				await this.FollowupWithFileAsync(stream, "oil" + ext);
+				await FollowupWithFileAsync(stream, "oil" + ext);
 				return MayflyResult.FromSuccess();
 			}
 
@@ -49,7 +49,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Corrupt(string url, [MinValue(5), MaxValue(100)] int iterations = 25)
 		{
 			await DeferAsync();
-			using Image<Rgba32> image = await this.http.GetImageAsync<Rgba32>(url);
+			using Image<Rgba32> image = await http.GetImageAsync<Rgba32>(url);
 			
 			if (image != null)
 			{
@@ -69,11 +69,11 @@ namespace Mayfly.Modules
 
 				for (int i = 0; i < iterations; i++)
 				{
-					buffer[this.random.Next(header + 4, buffer.Length)] = 0x00;
+					buffer[random.Next(header + 4, buffer.Length)] = 0x00;
 				}
 
 				await using MemoryStream corruptedStream = new MemoryStream(buffer);
-				await this.FollowupWithFileAsync(corruptedStream, "corrupted.jpg");
+				await FollowupWithFileAsync(corruptedStream, "corrupted.jpg");
 			}
 			else
 			{
@@ -87,7 +87,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Crush(string url, [MinValue(0), MaxValue(1)] float scale = 0.5f, [MinValue(1), MaxValue(100)] int quality = 10)
 		{
 			await DeferAsync();
-			using Image image = await this.http.GetMediaAsync(url);
+			using Image image = await http.GetMediaAsync(url);
 			
 			if (image != null)
 			{
@@ -104,7 +104,7 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.FollowupWithFileAsync(stream, "crushed" + ext);
+				await FollowupWithFileAsync(stream, "crushed" + ext);
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -130,11 +130,11 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Shift(string url)
 		{
 			await DeferAsync();
-			using Image<Rgba32> image = await this.http.GetImageAsync<Rgba32>(url);
+			using Image<Rgba32> image = await http.GetImageAsync<Rgba32>(url);
 			
 			if (image != null)
 			{
-				this.ColorFuckWorker(image);
+				ColorFuckWorker(image);
 
 				await using MemoryStream stream = new MemoryStream();
 				await image.SaveAsJpegAsync(stream, new JpegEncoder()
@@ -143,7 +143,7 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.FollowupWithFileAsync(stream, "shifted.jpg");
+				await FollowupWithFileAsync(stream, "shifted.jpg");
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -155,7 +155,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Shuffle(string url)
 		{
 			await DeferAsync();
-			using Image<Rgb24> image = await this.http.GetGifAsync<Rgb24>(url);
+			using Image<Rgb24> image = await http.GetGifAsync<Rgb24>(url);
 			
 			if (image != null)
 			{
@@ -163,14 +163,14 @@ namespace Mayfly.Modules
 
 				for (int i = 0; i < frames; i++)
 				{
-					image.Frames.MoveFrame(i, this.random.Next(0, frames));
+					image.Frames.MoveFrame(i, random.Next(0, frames));
 				}
 
 				await using MemoryStream stream = new MemoryStream();
 				await image.SaveAsGifAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.FollowupWithFileAsync(stream, "shuffled.gif");
+				await FollowupWithFileAsync(stream, "shuffled.gif");
 
 				return MayflyResult.FromSuccess();
 			}
@@ -182,7 +182,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Obama(string url)
 		{
 			await DeferAsync();
-			using Image<Rgba32> tvImage = await this.http.GetImageAsync<Rgba32>(url);
+			using Image<Rgba32> tvImage = await http.GetImageAsync<Rgba32>(url);
 			using Image<Rgba32> obamaImage = Image.Load<Rgba32>("./Media/obama.png");
 			
 			if (tvImage != null && obamaImage != null)
@@ -207,7 +207,7 @@ namespace Mayfly.Modules
 				await obamaImage.SaveAsJpegAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.FollowupWithFileAsync(stream, "test.jpg");
+				await FollowupWithFileAsync(stream, "test.jpg");
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -219,7 +219,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Jar(IUser user)
 		{
 			await DeferAsync();
-			using Image<Rgba32> avatarImage = await this.http.GetImageAsync<Rgba32>(user.GetAvatarUrl());
+			using Image<Rgba32> avatarImage = await http.GetImageAsync<Rgba32>(user.GetAvatarUrl());
 			using Image<Rgba32> jarImage = Image.Load<Rgba32>("./Media/jar.png");
 			using Image<Rgba32> baseImage = new Image<Rgba32>(jarImage.Width, jarImage.Height);
 
@@ -247,7 +247,7 @@ namespace Mayfly.Modules
 				await baseImage.SaveAsPngAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.FollowupWithFileAsync(stream, "jar.png");
+				await FollowupWithFileAsync(stream, "jar.png");
 				
 				return MayflyResult.FromSuccess();
 			}
@@ -271,10 +271,10 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Weezer(IUser wilson, IUser cuomo, IUser sharp, IUser bell)
 		{
 			await DeferAsync();
-			using Image<Rgba32> wilsonImage = await this.http.GetImageAsync<Rgba32>(wilson.GetAvatarUrl());
-			using Image<Rgba32> cuomoImage = await this.http.GetImageAsync<Rgba32>(cuomo.GetAvatarUrl());
-			using Image<Rgba32> sharpImage = await this.http.GetImageAsync<Rgba32>(sharp.GetAvatarUrl());
-			using Image<Rgba32> bellImage = await this.http.GetImageAsync<Rgba32>(bell.GetAvatarUrl());
+			using Image<Rgba32> wilsonImage = await http.GetImageAsync<Rgba32>(wilson.GetAvatarUrl());
+			using Image<Rgba32> cuomoImage = await http.GetImageAsync<Rgba32>(cuomo.GetAvatarUrl());
+			using Image<Rgba32> sharpImage = await http.GetImageAsync<Rgba32>(sharp.GetAvatarUrl());
+			using Image<Rgba32> bellImage = await http.GetImageAsync<Rgba32>(bell.GetAvatarUrl());
 			
 			using Image<Rgba32> weezerImage = Image.Load<Rgba32>("./Media/weezer.png");
 			using Image<Rgba32> baseImage = new Image<Rgba32>(weezerImage.Width, weezerImage.Height);
@@ -300,7 +300,7 @@ namespace Mayfly.Modules
 				await baseImage.SaveAsPngAsync(stream);
 				stream.Seek(0, SeekOrigin.Begin);
 
-				await this.FollowupWithFileAsync(stream, "weezer.png");
+				await FollowupWithFileAsync(stream, "weezer.png");
 				return MayflyResult.FromSuccess();
 			}
 			
@@ -311,7 +311,7 @@ namespace Mayfly.Modules
 		private async Task<RuntimeResult> Deepfry(string url)
 		{
 			await DeferAsync();
-			using Image image = await this.http.GetMediaAsync(url);
+			using Image image = await http.GetMediaAsync(url);
 
 			if (image != null)
 			{
@@ -334,7 +334,7 @@ namespace Mayfly.Modules
 				});
 
 				stream.Seek(0, SeekOrigin.Begin);
-				await this.FollowupWithFileAsync(stream, "fried" + ext);
+				await FollowupWithFileAsync(stream, "fried" + ext);
 				
 				return MayflyResult.FromSuccess();
 			}

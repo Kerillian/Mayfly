@@ -25,7 +25,7 @@ namespace Mayfly.Services
 		internal IUser User { get; }
 		internal AppearanceOptions Options { get; }
 		internal int CurrentPage { get; set; }
-		internal int Count => this.Pages.Count;
+		internal int Count => Pages.Count;
 		
 		public PaginatedMessage(IEnumerable<EmbedBuilder> builders, string title = "", Color? embedColor = null, IUser user = null, AppearanceOptions options = null)
 		{
@@ -68,8 +68,8 @@ namespace Mayfly.Services
 
 		public PaginationService(DiscordSocketClient client)
 		{
-			this.messages = new Dictionary<ulong, PaginatedMessage>();
-			client.ButtonExecuted += this.ButtonHandler;
+			messages = new Dictionary<ulong, PaginatedMessage>();
+			client.ButtonExecuted += ButtonHandler;
 		}
 
 		public async Task<IUserMessage> SendMessageAsync(SocketInteractionContext ctx, PaginatedMessage paginated, bool followup = false)
@@ -128,13 +128,13 @@ namespace Mayfly.Services
 				return message;
 			}
 
-			this.messages.Add(message.Id, paginated);
+			messages.Add(message.Id, paginated);
 
 			if (paginated.Options.Timeout != TimeSpan.Zero)
 			{
 				Task _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _t =>
 				{
-					if (!this.messages.ContainsKey(message.Id))
+					if (!messages.ContainsKey(message.Id))
 					{
 						return;
 					}
@@ -149,7 +149,7 @@ namespace Mayfly.Services
 							break;
 					}
 
-					this.messages.Remove(message.Id);
+					messages.Remove(message.Id);
 				});
 			}
 
@@ -158,7 +158,7 @@ namespace Mayfly.Services
 
 		public async Task ButtonHandler(SocketMessageComponent component)
 		{
-			if (this.messages.TryGetValue(component.Message.Id, out PaginatedMessage page))
+			if (messages.TryGetValue(component.Message.Id, out PaginatedMessage page))
 			{
 				if (component.User.Id != page.User.Id)
 				{
@@ -211,12 +211,12 @@ namespace Mayfly.Services
 								break;
 						}
 
-						this.messages.Remove(component.Message.Id);
+						messages.Remove(component.Message.Id);
 						break;
 					
 					case "select":
 						await component.UpdateAsync(x => x.Components = null);
-						this.messages.Remove(component.Message.Id);
+						messages.Remove(component.Message.Id);
 						break;
 				}
 			}

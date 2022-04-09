@@ -123,10 +123,10 @@ namespace Mayfly.Modules
 		public async Task Avatar(IGuildUser user)
 		{
 			string url = user.GetAvatarUrl(ImageFormat.Auto, 2048) ?? user.GetDefaultAvatarUrl();
-			await using Stream stream = await this.Http.GetStreamAsync(url);
-			string ext = this.ExtMatcher.Match(url).Groups[1].Value;
+			await using Stream stream = await Http.GetStreamAsync(url);
+			string ext = ExtMatcher.Match(url).Groups[1].Value;
 			
-			await this.RespondWithFileAsync(stream, $"avatar{ext}");
+			await RespondWithFileAsync(stream, $"avatar{ext}");
 		}
 		
 		[SlashCommand("color", "Preview colors in different formats.")]

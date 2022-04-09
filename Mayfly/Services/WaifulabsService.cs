@@ -9,25 +9,25 @@ namespace Mayfly.Services
 
 		public WaifulabsService(HttpService hs)
 		{
-			this.http = hs;
+			http = hs;
 		}
 
 		public async Task<Stream> GetImageStream()
 		{
-			if (0 >= this.rawImages.Count)
+			if (0 >= rawImages.Count)
 			{
-				WaifulabsResult json = await this.http.PostJsonAsync<WaifulabsGenerate, WaifulabsResult>("https://api.waifulabs.com/generate", new WaifulabsGenerate()
+				WaifulabsResult json = await http.PostJsonAsync<WaifulabsGenerate, WaifulabsResult>("https://api.waifulabs.com/generate", new WaifulabsGenerate()
 				{
 					Step = 0
 				});
 
 				foreach (WaifulabsGirl girl in json.NewGirls)
 				{
-					this.rawImages.Push(Convert.FromBase64String(girl.Image));
+					rawImages.Push(Convert.FromBase64String(girl.Image));
 				}
 			}
 
-			return new MemoryStream(this.rawImages.Pop());
+			return new MemoryStream(rawImages.Pop());
 		}
 	}
 }

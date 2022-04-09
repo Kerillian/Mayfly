@@ -33,12 +33,12 @@ namespace Mayfly.Services.Poll
 				throw new ArgumentOutOfRangeException(nameof(args));
 			}
 			
-			this.Title = title;
+			Title = title;
 
 			for (int i = 0; i < args.Length; i++)
 			{
-				this.Options.Add(new Emoji(OptionChars[i]), new PollOption(args[i]));
-				this.componentBuilder.WithButton(emote: new Emoji(OptionChars[i]), customId: OptionChars[i], style: ButtonStyle.Secondary);
+				Options.Add(new Emoji(OptionChars[i]), new PollOption(args[i]));
+				componentBuilder.WithButton(emote: new Emoji(OptionChars[i]), customId: OptionChars[i], style: ButtonStyle.Secondary);
 			}
 		}
 
@@ -64,23 +64,23 @@ namespace Mayfly.Services.Poll
 
 		public async Task Setup(SocketInteractionContext ctx)
 		{
-			this.endTime = DateTimeOffset.Now.AddMinutes(10);
+			endTime = DateTimeOffset.Now.AddMinutes(10);
 
-			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: this.Build(), components: componentBuilder.Build());
-			this.Message = await ctx.Interaction.GetOriginalResponseAsync();
+			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: Build(), components: componentBuilder.Build());
+			Message = await ctx.Interaction.GetOriginalResponseAsync();
 		}
 
 		public async Task Update(bool ended = false)
 		{
-			if (this.Time > DateTime.Now)
+			if (Time > DateTime.Now)
 			{
-				if (!this.timeout)
+				if (!timeout)
 				{
-					Task _ = Task.Delay(DateTime.Now.Subtract(this.Time)).ContinueWith(async _t =>
+					Task _ = Task.Delay(DateTime.Now.Subtract(Time)).ContinueWith(async _t =>
 					{
-						await this.Message.ModifyAsync(x =>
+						await Message.ModifyAsync(x =>
 						{
-							x.Embed = this.Build();
+							x.Embed = Build();
 
 							if (ended)
 							{
@@ -89,26 +89,26 @@ namespace Mayfly.Services.Poll
 							}
 						});
 						
-						this.timeout = false;
+						timeout = false;
 					});
 					
-					this.timeout = true;
+					timeout = true;
 				}
 
 				return;
 			}
 
-			if (this.lastVotes == this.TotalVotes)
+			if (lastVotes == TotalVotes)
 			{
 				return;
 			}
 
-			this.lastVotes = this.TotalVotes;
-			this.Time = DateTime.Now + TimeSpan.FromSeconds(3);
+			lastVotes = TotalVotes;
+			Time = DateTime.Now + TimeSpan.FromSeconds(3);
 
-			await this.Message.ModifyAsync(x =>
+			await Message.ModifyAsync(x =>
 			{
-				x.Embed = this.Build();
+				x.Embed = Build();
 				
 				if (ended)
 				{
@@ -119,7 +119,7 @@ namespace Mayfly.Services.Poll
 		
 		public async Task Finish()
 		{
-			await this.Update(true);
+			await Update(true);
 		}
 	}
 }

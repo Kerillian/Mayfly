@@ -10,7 +10,7 @@ namespace Mayfly.Attributes
 
 		public RateLimitAttribute(int seconds)
 		{
-			this.timeSpan = TimeSpan.FromSeconds(seconds);
+			timeSpan = TimeSpan.FromSeconds(seconds);
 		}
 
 		public override Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo info, IServiceProvider services)

@@ -13,11 +13,11 @@ namespace Mayfly.Services.Trivia
 
 		public TriviaService(DiscordSocketClient dsc, HttpService hh)
 		{
-			this.discord = dsc;
-			this.http = hh;
+			discord = dsc;
+			http = hh;
 
-			this.discord.ButtonExecuted += HandleButtons;
-			this.discord.MessageDeleted += OnMessageDeleted;
+			discord.ButtonExecuted += HandleButtons;
+			discord.MessageDeleted += OnMessageDeleted;
 		}
 
 		private Task OnMessageDeleted(Cacheable<IMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel)
@@ -36,7 +36,7 @@ namespace Mayfly.Services.Trivia
 
 		private async Task HandleButtons(SocketMessageComponent interaction)
 		{
-			if (interaction.Channel is SocketTextChannel text && this.sessions.TryGetValue(text.Guild.Id, out TriviaSession session))
+			if (interaction.Channel is SocketTextChannel text && sessions.TryGetValue(text.Guild.Id, out TriviaSession session))
 			{
 				await interaction.DeferAsync();
 				session.HandleButtons(interaction);
@@ -45,10 +45,10 @@ namespace Mayfly.Services.Trivia
 
 		public async Task<bool> NewSession(SocketInteractionContext ctx, TriviaOptions options)
 		{
-			if (!this.sessions.ContainsKey(ctx.Guild.Id))
+			if (!sessions.ContainsKey(ctx.Guild.Id))
 			{
-				TriviaSession session = new TriviaSession(this.http, ctx.User.Id);
-				this.sessions.TryAdd(ctx.Guild.Id, session);
+				TriviaSession session = new TriviaSession(http, ctx.User.Id);
+				sessions.TryAdd(ctx.Guild.Id, session);
 
 				try
 				{
@@ -57,7 +57,7 @@ namespace Mayfly.Services.Trivia
 				}
 				catch { /* ignore */ }
 
-				this.sessions.TryRemove(ctx.Guild.Id, out session);
+				sessions.TryRemove(ctx.Guild.Id, out session);
 				return true;
 			}
 

@@ -58,8 +58,8 @@ namespace Mayfly.Services.Trivia
 
 		public TriviaSession(HttpService hs, ulong host)
 		{
-			this.http = hs;
-			this.host = host;
+			http = hs;
+			host = host;
 		}
 
 		private string OptionToEmote(string option)
@@ -82,47 +82,47 @@ namespace Mayfly.Services.Trivia
 
 		public void ForceStop()
 		{
-			using (this.cancelDeleted)
+			using (cancelDeleted)
 			{
-				this.cancelDeleted.Cancel();
-				this.cancelQuestionWait.Cancel();
-				this.cancelJoinWait.Cancel();
+				cancelDeleted.Cancel();
+				cancelQuestionWait.Cancel();
+				cancelJoinWait.Cancel();
 			}
 		}
 
 		public async Task Setup(SocketInteraction interaction, TriviaOptions options)
 		{
 			await interaction.RespondAsync(embed: presetEmbed, components: WaitingComponent);
-			this.message = await interaction.GetOriginalResponseAsync();
-			this.trivia = await this.http.GetJsonAsync<TriviaResult>(options.Build());
-			this.Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
+			message = await interaction.GetOriginalResponseAsync();
+			trivia = await http.GetJsonAsync<TriviaResult>(options.Build());
+			Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
 			
 			try
 			{
-				await Task.Delay(30000, this.cancelJoinWait.Token);
-				this.cancelJoinWait = new CancellationTokenSource();
+				await Task.Delay(30000, cancelJoinWait.Token);
+				cancelJoinWait = new CancellationTokenSource();
 			}
 			catch { /* Ignored */ }
 		}
 
 		public void CancelWait()
 		{
-			using (this.cancelQuestionWait)
+			using (cancelQuestionWait)
 			{
-				this.cancelQuestionWait.Cancel();
+				cancelQuestionWait.Cancel();
 			}
 
-			this.cancelQuestionWait = new CancellationTokenSource();
+			cancelQuestionWait = new CancellationTokenSource();
 		}
 		
 		public void HandleButtons(SocketMessageComponent interaction)
 		{
-			if (interaction.Message.Id != this.message.Id)
+			if (interaction.Message.Id != message.Id)
 			{
 				return;
 			}
 		
-			if (this.waitingForPlayers)
+			if (waitingForPlayers)
 			{
 				switch (interaction.Data.CustomId)
 				{
@@ -130,15 +130,15 @@ namespace Mayfly.Services.Trivia
 					{
 						Console.WriteLine($"{interaction.User.Username}: Tried to start the game!");
 						
-						if (interaction.User.Id == this.host)
+						if (interaction.User.Id == host)
 						{
-							this.waitingForPlayers = false;
+							waitingForPlayers = false;
 							
 							Console.WriteLine($"{interaction.User.Username}: Started the game!");
 							
-							using (this.cancelJoinWait)
+							using (cancelJoinWait)
 							{
-								this.cancelJoinWait.Cancel();
+								cancelJoinWait.Cancel();
 							}
 						}
 					}
@@ -148,9 +148,9 @@ namespace Mayfly.Services.Trivia
 					{
 						Console.WriteLine($"{interaction.User.Username}: Joined!");
 						
-						if (!this.Players.ContainsKey(interaction.User.Id))
+						if (!Players.ContainsKey(interaction.User.Id))
 						{
-							this.Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
+							Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
 						}
 					}
 					break;
@@ -158,13 +158,13 @@ namespace Mayfly.Services.Trivia
 			}
 			else
 			{
-				if (this.Players.TryGetValue(interaction.User.Id, out TriviaPlayer player))
+				if (Players.TryGetValue(interaction.User.Id, out TriviaPlayer player))
 				{
-					if (this.answerDict.TryGetValue(OptionToEmote(interaction.Data.CustomId), out string answer) && !player.HasChosen)
+					if (answerDict.TryGetValue(OptionToEmote(interaction.Data.CustomId), out string answer) && !player.HasChosen)
 					{
 						Console.WriteLine($"{interaction.User.Username}: Chose -> {answer}");
 						
-						if (answer == this.question.CorrectAnswer)
+						if (answer == question.CorrectAnswer)
 						{
 							player.Correct++;
 							player.Streak++;
@@ -182,12 +182,12 @@ namespace Mayfly.Services.Trivia
 						}
 		
 						player.HasChosen = true;
-						this.answered++;
+						answered++;
 		
-						if (this.answered == this.Players.Count)
+						if (answered == Players.Count)
 						{
-							this.answered = 0;
-							this.CancelWait();
+							answered = 0;
+							CancelWait();
 						}
 					}
 				}
@@ -196,41 +196,41 @@ namespace Mayfly.Services.Trivia
 
 		public async Task StartTimeout()
 		{
-			foreach (TriviaQuestion triviaQuestion in this.trivia.Results)
+			foreach (TriviaQuestion triviaQuestion in trivia.Results)
 			{
-				if (this.cancelDeleted.IsCancellationRequested)
+				if (cancelDeleted.IsCancellationRequested)
 				{
 					return;
 				}
 				
-				foreach (TriviaPlayer player in this.Players.Values)
+				foreach (TriviaPlayer player in Players.Values)
 				{
 					player.HasChosen = false;
 				}
 
-				this.answerDict.Clear();
-				this.question = triviaQuestion;
+				answerDict.Clear();
+				question = triviaQuestion;
 
 				if (triviaQuestion.IsBoolean)
 				{
-					this.answerDict.Add(TRUE_EMOJI, "True");
-					this.answerDict.Add(FALSE_EMOJI, "False");
+					answerDict.Add(TRUE_EMOJI, "True");
+					answerDict.Add(FALSE_EMOJI, "False");
 				}
 				else
 				{
 					string[] shuffled = triviaQuestion.ShuffledItems;
 
-					this.answerDict.Add(A_EMOJI, shuffled[0]);
-					this.answerDict.Add(B_EMOJI, shuffled[1]);
-					this.answerDict.Add(C_EMOJI, shuffled[2]);
-					this.answerDict.Add(D_EMOJI, shuffled[3]);
+					answerDict.Add(A_EMOJI, shuffled[0]);
+					answerDict.Add(B_EMOJI, shuffled[1]);
+					answerDict.Add(C_EMOJI, shuffled[2]);
+					answerDict.Add(D_EMOJI, shuffled[3]);
 				}
 
 				EmbedBuilder builder = new EmbedBuilder()
 				{
 					Title = HttpUtility.HtmlDecode(triviaQuestion.Category),
 					Description = HttpUtility.HtmlDecode(triviaQuestion.Question),
-					Fields = this.answerDict.Select(x => new EmbedFieldBuilder().WithIsInline(true).WithName(x.Key).WithValue(x.Value)).ToList(),
+					Fields = answerDict.Select(x => new EmbedFieldBuilder().WithIsInline(true).WithName(x.Key).WithValue(x.Value)).ToList(),
 					Color = triviaQuestion.Difficulty switch
 					{
 						"easy"   => Color.Green,
@@ -240,21 +240,21 @@ namespace Mayfly.Services.Trivia
 					}
 				};
 
-				await this.message.ModifyAsync(m =>
+				await message.ModifyAsync(m =>
 				{
 					m.Embed = builder.Build();
-					m.Components = this.question.IsBoolean ? TrueFalseComponent : MultiChoiceComponent;
+					m.Components = question.IsBoolean ? TrueFalseComponent : MultiChoiceComponent;
 				});
 
 				try
 				{
-					await Task.Delay(30000, this.cancelQuestionWait.Token);
+					await Task.Delay(30000, cancelQuestionWait.Token);
 				}
 				catch { /* Ignored */ }
 
 				string answer = "Correct answer: " + HttpUtility.HtmlDecode(triviaQuestion.CorrectAnswer);
 
-				foreach ((string key, string value) in this.answerDict)
+				foreach ((string key, string value) in answerDict)
 				{
 					if (value == HttpUtility.HtmlDecode(triviaQuestion.CorrectAnswer))
 					{
@@ -263,25 +263,25 @@ namespace Mayfly.Services.Trivia
 					}
 				}
 
-				await this.message.ModifyAsync(m => m.Embed = new EmbedBuilder()
+				await message.ModifyAsync(m => m.Embed = new EmbedBuilder()
 				{
 					Title = "Answer Result",
 					Color = Color.DarkGreen,
 					Description = answer,
 				}.Build());
 
-				this.answered = 0;
+				answered = 0;
 				await Task.Delay(3000);
 			}
 
 			TableBuilder table = new TableBuilder("Username", "Score", "Correct", "Wrong");
 
-			foreach (TriviaPlayer player in this.Players.OrderByDescending(x => x.Value.Score).Take(10).Select(x => x.Value))
+			foreach (TriviaPlayer player in Players.OrderByDescending(x => x.Value.Score).Take(10).Select(x => x.Value))
 			{
 				table.AddRow(player.Username, player.Score.ToString(), player.Correct.ToString(), player.Wrong.ToString());
 			}
 
-			await this.message.ModifyAsync(x =>
+			await message.ModifyAsync(x =>
 			{
 				x.Components = null;
 				x.Embed = new EmbedBuilder()

@@ -28,31 +28,31 @@ namespace Mayfly.Services.Trivia
 
 		public TriviaOptions(int total, TriviaCategory category, TriviaDifficulty difficulty, TriviaType type)
 		{
-			this.Total = total;
-			this.Category = category;
-			this.Difficulty = difficulty;
-			this.Type = type;
+			Total = total;
+			Category = category;
+			Difficulty = difficulty;
+			Type = type;
 		}
 
 		public string Build()
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.Append("https://opentdb.com/api.php?amount=" + this.Total);
+			builder.Append("https://opentdb.com/api.php?amount=" + Total);
 
-			if (this.Category > 0)
+			if (Category > 0)
 			{
-				builder.Append("&category=" + (int)this.Category);
+				builder.Append("&category=" + (int)Category);
 			}
 
-			if (this.Difficulty > 0)
+			if (Difficulty > 0)
 			{
-				builder.Append("&difficulty=" + Enum.GetName(typeof(TriviaDifficulty), this.Difficulty)?.ToLower());
+				builder.Append("&difficulty=" + Enum.GetName(typeof(TriviaDifficulty), Difficulty)?.ToLower());
 			}
 
-			if (this.Type > 0)
+			if (Type > 0)
 			{
-				builder.Append("&type=" + Enum.GetName(typeof(TriviaType), this.Type)?.ToLower());
+				builder.Append("&type=" + Enum.GetName(typeof(TriviaType), Type)?.ToLower());
 			}
 
 			return builder.ToString();
