@@ -35,19 +35,19 @@ namespace Mayfly.Utilities
 	public class TableBuilder
 	{
 		private readonly string[] tableHeaders;
-		private readonly int[] sizes;
+		private readonly int[] tableWidths;
 		private readonly List<string[]> tableRows = new List<string[]>();
-		private readonly TableDesign design;
+		private readonly TableDesign tableDesign;
 
 		public TableBuilder(TableDesign design, params string[] headers)
 		{
-			design = design;
+			tableDesign = design;
 			tableHeaders = headers;
-			sizes = new int[headers.Length];
+			tableWidths = new int[headers.Length];
 
 			for (int i = 0; i < tableHeaders.Length; i++)
 			{
-				sizes[i] = tableHeaders[i].Length;
+				tableWidths[i] = tableHeaders[i].Length;
 			}
 		}
 
@@ -62,9 +62,9 @@ namespace Mayfly.Utilities
 			{
 				for (int i = 0; i < row.Length; i++)
 				{
-					if (row[i].Length > sizes[i])
+					if (row[i].Length > tableWidths[i])
 					{
-						sizes[i] = row[i].Length;
+						tableWidths[i] = row[i].Length;
 					}
 				}
 				
@@ -74,14 +74,14 @@ namespace Mayfly.Utilities
 
 		private string BuildTemplate()
 		{
-			string[] parts = new string[sizes.Length];
+			string[] parts = new string[tableWidths.Length];
 
-			for (int i = 0; i < sizes.Length; i++)
+			for (int i = 0; i < tableWidths.Length; i++)
 			{
-				parts[i] = $"{{{i},-{sizes[i]}}}";
+				parts[i] = $"{{{i},-{tableWidths[i]}}}";
 			}
 			
-			return $"{design.Vertical} {string.Join($" {design.Vertical} ", parts)} {design.Vertical}\n";
+			return $"{tableDesign.Vertical} {string.Join($" {tableDesign.Vertical} ", parts)} {tableDesign.Vertical}\n";
 		}
 
 		private string BuildFiller(char left, char connector, char right)
@@ -90,16 +90,18 @@ namespace Mayfly.Utilities
 
 			builder.Append(left);
 
-			for (int i = 0; i < sizes.Length; i++)
+			for (int i = 0; i < tableWidths.Length - 1; i++)
 			{
-				builder.Append(new string(design.Horizontal, sizes[i] + 2));
+				builder.Append(new string(tableDesign.Horizontal, tableWidths[i] + 2));
 
-				if (i != sizes.Length - 1)
+				if (i != tableWidths.Length - 1)
 				{
 					builder.Append(connector);
 				}
 			}
 			
+			builder.Append(new string(tableDesign.Horizontal, tableWidths[tableWidths.Length] + 2));
+			builder.Append(connector);
 			return builder.Append(right).ToString();
 		}
 
@@ -108,16 +110,16 @@ namespace Mayfly.Utilities
 			StringBuilder builder = new StringBuilder();
 			string template = BuildTemplate();
 
-			builder.AppendLine(BuildFiller(design.TopLeft, design.TopConnector, design.TopRight));
+			builder.AppendLine(BuildFiller(tableDesign.TopLeft, tableDesign.TopConnector, tableDesign.TopRight));
 			builder.AppendFormat(template, tableHeaders);
-			builder.AppendLine(BuildFiller(design.HeaderLeft, design.HeaderConnector, design.HeaderRight));
+			builder.AppendLine(BuildFiller(tableDesign.HeaderLeft, tableDesign.HeaderConnector, tableDesign.HeaderRight));
 
 			foreach (string[] row in tableRows)
 			{
 				builder.AppendFormat(template, row);
 			}
 
-			builder.AppendLine(BuildFiller(design.BottomLeft, design.BottomConnector, design.BottomRight));
+			builder.AppendLine(BuildFiller(tableDesign.BottomLeft, tableDesign.BottomConnector, tableDesign.BottomRight));
 			return builder.ToString();
 		}
 	}

@@ -1,7 +1,6 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Lavalink4NET;
 using Lavalink4NET.Logging;
 
 namespace Mayfly.Services
@@ -10,19 +9,15 @@ namespace Mayfly.Services
 	{
 		private readonly DiscordSocketClient client;
 		private readonly InteractionService interaction;
-		private readonly BotConfig config;
 		private readonly DatabaseService database;
-		private readonly IAudioService audio;
 		private readonly ILogger logger;
 		private readonly IServiceProvider provider;
 
-		public EventService(DiscordSocketClient dsc, InteractionService @is, BotConfig bc, DatabaseService db, IAudioService ias, ILogger il, IServiceProvider isp)
+		public EventService(DiscordSocketClient dsc, InteractionService @is, DatabaseService db, ILogger il, IServiceProvider isp)
 		{
 			client = dsc;
 			interaction = @is;
-			config = bc;
 			database = db;
-			audio = ias;
 			logger = il;
 			provider = isp;
 			

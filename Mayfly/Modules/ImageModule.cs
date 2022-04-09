@@ -219,7 +219,7 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Jar(IUser user)
 		{
 			await DeferAsync();
-			using Image<Rgba32> avatarImage = await http.GetImageAsync<Rgba32>(user.GetAvatarUrl());
+			using Image avatarImage = await http.GetMediaAsync(user.GetAvatarUrl());
 			using Image<Rgba32> jarImage = Image.Load<Rgba32>("./Media/jar.png");
 			using Image<Rgba32> baseImage = new Image<Rgba32>(jarImage.Width, jarImage.Height);
 
@@ -238,7 +238,6 @@ namespace Mayfly.Modules
 				
 				baseImage.Mutate(x =>
 				{
-					//var p = new Point((baseImage.Width / 2) - (avatarImage.Width / 2), (baseImage.Height / 2) - (avatarImage.Height / 2));
 					x.DrawImage(avatarImage, new Point(256, 620), 1f);
 					x.DrawImage(jarImage, new Point(0, 0), 1f);
 				});
@@ -271,10 +270,10 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> Weezer(IUser wilson, IUser cuomo, IUser sharp, IUser bell)
 		{
 			await DeferAsync();
-			using Image<Rgba32> wilsonImage = await http.GetImageAsync<Rgba32>(wilson.GetAvatarUrl());
-			using Image<Rgba32> cuomoImage = await http.GetImageAsync<Rgba32>(cuomo.GetAvatarUrl());
-			using Image<Rgba32> sharpImage = await http.GetImageAsync<Rgba32>(sharp.GetAvatarUrl());
-			using Image<Rgba32> bellImage = await http.GetImageAsync<Rgba32>(bell.GetAvatarUrl());
+			using Image wilsonImage = await http.GetMediaAsync(wilson.GetAvatarUrl());
+			using Image cuomoImage = await http.GetMediaAsync(cuomo.GetAvatarUrl());
+			using Image sharpImage = await http.GetMediaAsync(sharp.GetAvatarUrl());
+			using Image bellImage = await http.GetMediaAsync(bell.GetAvatarUrl());
 			
 			using Image<Rgba32> weezerImage = Image.Load<Rgba32>("./Media/weezer.png");
 			using Image<Rgba32> baseImage = new Image<Rgba32>(weezerImage.Width, weezerImage.Height);
