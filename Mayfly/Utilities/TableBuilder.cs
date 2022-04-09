@@ -84,7 +84,7 @@ namespace Mayfly.Utilities
 			return $"{this.design.Vertical} {string.Join($" {this.design.Vertical} ", parts)} {this.design.Vertical}\n";
 		}
 
-		public string BuildFiller(char left, char connector, char right)
+		private string BuildFiller(char left, char connector, char right)
 		{
 			StringBuilder builder = new StringBuilder();
 
