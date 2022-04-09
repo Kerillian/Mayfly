@@ -39,9 +39,9 @@ namespace Mayfly.Utilities
 		private readonly List<string[]> tableRows = new List<string[]>();
 		private readonly TableDesign design;
 
-		public TableBuilder(params string[] headers)
+		public TableBuilder(TableDesign design, params string[] headers)
 		{
-			this.design = TableDesign.Default;
+			this.design = design;
 			this.tableHeaders = headers;
 			this.sizes = new int[headers.Length];
 
@@ -51,9 +51,9 @@ namespace Mayfly.Utilities
 			}
 		}
 
-		public TableBuilder(TableDesign design, params string[] headers) : this(headers)
+		public TableBuilder(params string[] headers) : this(TableDesign.Default, headers)
 		{
-			this.design = design;
+			
 		}
 
 		public void AddRow(params string[] row)
@@ -92,7 +92,7 @@ namespace Mayfly.Utilities
 
 			for (int i = 0; i < this.sizes.Length; i++)
 			{
-				builder.Append(new string(design.Horizontal, this.sizes[i] + 2));
+				builder.Append(new string(this.design.Horizontal, this.sizes[i] + 2));
 
 				if (i != this.sizes.Length - 1)
 				{
@@ -108,16 +108,16 @@ namespace Mayfly.Utilities
 			StringBuilder builder = new StringBuilder();
 			string template = BuildTemplate();
 
-			builder.AppendLine(this.BuildFiller(design.TopLeft, design.TopConnector, design.TopRight));
+			builder.AppendLine(this.BuildFiller(this.design.TopLeft, this.design.TopConnector, this.design.TopRight));
 			builder.AppendFormat(template, this.tableHeaders);
-			builder.AppendLine(this.BuildFiller(design.HeaderLeft, design.HeaderConnector, design.HeaderRight));
+			builder.AppendLine(this.BuildFiller(this.design.HeaderLeft, this.design.HeaderConnector, this.design.HeaderRight));
 
 			foreach (string[] row in this.tableRows)
 			{
 				builder.AppendFormat(template, row);
 			}
 
-			builder.AppendLine(this.BuildFiller(design.BottomLeft, design.BottomConnector, design.BottomRight));
+			builder.AppendLine(this.BuildFiller(this.design.BottomLeft, this.design.BottomConnector, this.design.BottomRight));
 			return builder.ToString();
 		}
 	}
