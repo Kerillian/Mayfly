@@ -33,6 +33,7 @@ namespace Mayfly
 					HandlerTimeout = 5000,
 					MessageCacheSize = 1000,
 					DefaultRetryMode = RetryMode.RetryRatelimit,
+					
 				}))
 				.AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
 				.AddSingleton(JsonConvert.DeserializeObject<BotConfig>(File.ReadAllText("Config.json")))

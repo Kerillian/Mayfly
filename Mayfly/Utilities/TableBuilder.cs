@@ -2,21 +2,21 @@
 
 namespace Mayfly.Utilities
 {
-	public class TableDesign
+	public readonly struct TableDesign
 	{
-		public char Horizontal { get; set; }
-		public char Vertical { get; set; }
-		public char TopLeft { get; set; }
-		public char TopConnector { get; set; }
-		public char TopRight { get; set; }
-		public char HeaderLeft { get; set; }
-		public char HeaderConnector { get; set; }
-		public char HeaderRight { get; set; }
-		public char BottomLeft { get; set; }
-		public char BottomConnector { get; set; }
-		public char BottomRight { get; set; }
+		public char Horizontal { get; init; }
+		public char Vertical { get; init; }
+		public char TopLeft { get; init; }
+		public char TopConnector { get; init; }
+		public char TopRight { get; init; }
+		public char HeaderLeft { get; init; }
+		public char HeaderConnector { get; init; }
+		public char HeaderRight { get; init; }
+		public char BottomLeft { get; init; }
+		public char BottomConnector { get; init; }
+		public char BottomRight { get; init; }
 
-		public static TableDesign Default { get; } = new TableDesign()
+		public static TableDesign Light { get; } = new TableDesign()
 		{
 			Horizontal = '─',
 			Vertical = '│',
@@ -29,6 +29,21 @@ namespace Mayfly.Utilities
 			BottomLeft = '╰',
 			BottomConnector = '┴',
 			BottomRight = '╯'
+		};
+
+		public static TableDesign Heavy { get; } = new TableDesign()
+		{
+			Horizontal = '━',
+			Vertical = '┃',
+			TopLeft = '┏',
+			TopConnector = '┳',
+			TopRight = '┓',
+			HeaderLeft = '┣',
+			HeaderConnector = '╋',
+			HeaderRight = '┫',
+			BottomLeft = '┗',
+			BottomConnector = '┻',
+			BottomRight = '┛'
 		};
 	}
 
@@ -51,7 +66,7 @@ namespace Mayfly.Utilities
 			}
 		}
 
-		public TableBuilder(params string[] headers) : this(TableDesign.Default, headers)
+		public TableBuilder(params string[] headers) : this(TableDesign.Light, headers)
 		{
 			
 		}
@@ -100,8 +115,6 @@ namespace Mayfly.Utilities
 				}
 			}
 			
-			builder.Append(new string(tableDesign.Horizontal, tableWidths[tableWidths.Length] + 2));
-			builder.Append(connector);
 			return builder.Append(right).ToString();
 		}
 
