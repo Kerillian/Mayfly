@@ -105,7 +105,7 @@ namespace Mayfly.Utilities
 
 			builder.Append(left);
 
-			for (int i = 0; i < tableWidths.Length - 1; i++)
+			for (int i = 0; i < tableWidths.Length; i++)
 			{
 				builder.Append(new string(tableDesign.Horizontal, tableWidths[i] + 2));
 
