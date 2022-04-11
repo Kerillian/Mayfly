@@ -169,5 +169,11 @@ namespace Mayfly.Modules
 			stream.Seek(0, SeekOrigin.Begin);
 			await RespondWithFileAsync(stream, "color.png", embed: builder.Build());
 		}
+
+		[SlashCommand("bobux", "Bobux to USD.")]
+		public async Task Bobux(double bobux)
+		{
+			await RespondAsync($"That would be about `{bobux * 0.0125:C}`");
+		}
 	}
 }
