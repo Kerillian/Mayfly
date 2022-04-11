@@ -10,9 +10,11 @@ namespace Mayfly.Modules
 		public DatabaseService Database { get; set; }
 
 		[SlashCommand("profile", "Get profile data.")]
-		public async Task<RuntimeResult> Profile()
+		public async Task<RuntimeResult> Profile(IUser user = null)
 		{
-			UserData data = await Database.GetUserAsync(Context.User);
+			user ??= Context.User;
+			
+			UserData data = await Database.GetUserAsync(user.Id);
 
 			if (data is null)
 			{

@@ -39,6 +39,11 @@ namespace Mayfly.Services
 		 * User methods
 		 */
 
+		public async Task<UserData> GetUserAsync(ulong id)
+		{
+			return await Context.Users.FindAsync(id);
+		}
+
 		public async Task<UserData> GetUserAsync(IUser user)
 		{
 			return await Context.Users.FindAsync(user.Id);
