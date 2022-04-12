@@ -173,7 +173,7 @@ namespace Mayfly.Modules
 		[SlashCommand("bobux", "Bobux to USD.")]
 		public async Task Bobux(double bobux)
 		{
-			await RespondAsync($"That would be about `{bobux * 0.0125:C}`");
+			await RespondAsync($"That would be about `${bobux * 0.0125:D}`");
 		}
 	}
 }
