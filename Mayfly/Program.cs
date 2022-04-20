@@ -62,6 +62,10 @@ namespace Mayfly
 					
 					return new LavalinkNodeOptions()
 					{
+						#if DEBUG
+							ReconnectStrategy = ReconnectStrategies.None,
+						#endif
+						
 						RestUri = $"http://{cfg?.LavaLinkIP}:{cfg?.LavaLinkPort}",
 						WebSocketUri = $"ws://{cfg?.LavaLinkIP}:{cfg?.LavaLinkPort}",
 						Password = cfg?.LavaLinkPassword ?? "youshallnotpass",

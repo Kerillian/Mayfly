@@ -35,42 +35,24 @@ namespace Mayfly.Modules
 		
 		public HttpService Http { get; set; }
 		public RandomService Random { get; set; }
-		
-		[SlashCommand("random", "Get a random image from imgur sub.")]
-		public async Task<RuntimeResult> RandomSub(string sub)
+		public BotConfig Config { get; set; }
+
+		[SlashCommand("random", "Express yourself randomly.")]
+		public async Task<RuntimeResult> RandomQuery(string query)
 		{
 			await DeferAsync();
-			ImgurResult resp = await Http.GetJsonAsync<ImgurResult>($"https://imgur.com/r/{Uri.EscapeDataString(sub)}/new.json");
+			TenorSearch search = await Http.GetJsonAsync<TenorSearch>(new TenorSearchBuilder(Config.TenorKey).WithQuery(query).WithLimit(50).Build());
 
-			if (resp is { Success: true })
+			if (search?.Results.Length > 0)
 			{
-				ImgurPost image = Random.Pick(resp.Data);
+				TenorGif gif = Random.Pick(search.Results);
+				TenorFormats format = Random.Pick(gif.Media);
 
-				if (image.Nsfw && Context.Channel is ITextChannel { IsNsfw: false })
-				{
-					return MayflyResult.FromError("NotNSFW", "This tag or image is marked NSFW, please use this tag in a NSFW channel.");
-				}
-
-				await FollowupAsync(embed: new EmbedBuilder()
-				{
-					Color = new Color(27, 183, 110),
-					ImageUrl = "https://i.imgur.com/" + image.Hash + image.Ext,
-					Timestamp = image.Timestamp,
-
-					Author = new EmbedAuthorBuilder()
-					{
-						Name = image.Title,
-						IconUrl = "https://s.imgur.com/images/favicon-32x32.png"
-					},
-
-					Footer = new EmbedFooterBuilder()
-					{
-						Text = image.Author
-					}
-				}.WithEmpty().Build());
+				await FollowupAsync(format.Gif.Url);
+				return MayflyResult.FromSuccess();
 			}
 
-			return MayflyResult.FromSuccess();
+			return MayflyResult.FromError("NoResults", "I couldn't find anything to express that, sorry.");
 		}
 		
 		[SlashCommand("dice", "Roll a Six-sided die.")]
