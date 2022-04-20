@@ -6,14 +6,12 @@ namespace Mayfly.Services.Poll
 {
 	public class PollService
 	{
-		private readonly DiscordSocketClient discord;
 		private readonly Dictionary<ulong, Poll> pollData = new Dictionary<ulong, Poll>();
 
 		public PollService(DiscordSocketClient dsc)
 		{
-			discord = dsc;
 			//discord.ReactionAdded += HandleReactions;
-			discord.ButtonExecuted += HandleButtons;
+			dsc.ButtonExecuted += HandleButtons;
 		}
 
 		private async Task HandleButtons(SocketMessageComponent interaction)
