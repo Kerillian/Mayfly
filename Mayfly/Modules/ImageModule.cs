@@ -23,7 +23,7 @@ namespace Mayfly.Modules
 		public RandomService random { get; set; }
 		public BotConfig config { get; set; }
 
-		[SlashCommand("oil", "Make anything art."), RateLimit(5)]
+		[SlashCommand("oil", "Make anything art."), RateLimit(10)]
 		public async Task<RuntimeResult> Oil(string url, [MinValue(1), MaxValue(50)] int levels = 25, [MinValue(1), MaxValue(50)] int size = 30)
 		{
 			await DeferAsync();
