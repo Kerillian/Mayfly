@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace Mayfly.UrlBuilders
+﻿namespace Mayfly.UrlBuilders
 {
 	public enum JikanAnimeType
 	{
