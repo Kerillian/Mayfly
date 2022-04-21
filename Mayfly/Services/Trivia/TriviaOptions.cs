@@ -4,19 +4,19 @@ namespace Mayfly.Services.Trivia
 {
 	public enum TriviaDifficulty
 	{
-		All, Easy, Medium, Hard
+		Any, Easy, Medium, Hard
 	}
 
 	public enum TriviaCategory
 	{
-		All, GeneralKnowledge = 9, Books, Film, Music, MusicalsAndTheatres, Television, VideoGames, BoardGames,
+		Any, GeneralKnowledge = 9, Books, Film, Music, MusicalsAndTheatres, Television, VideoGames, BoardGames,
 		ScienceAndNature, Computers, Mathematics, Mythology, Sports, Geography, History, Politics, Art, Celebrities,
 		Animals, Vehicles, Comics, Gadgets, AnimeAndManga, CartoonAnimations
 	}
 
 	public enum TriviaType
 	{
-		All, Multiple, Boolean
+		Any, Multiple, Boolean
 	}
 
 	public class TriviaOptions

@@ -33,7 +33,7 @@ namespace Mayfly.Modules
 		}
 
 		[SlashCommand("trivia", "Tower Unite's Trivia.")]
-		public async Task<RuntimeResult> Trivia([MinValue(5), MaxValue(50)] int total = 10, TriviaCategory category = TriviaCategory.All, TriviaDifficulty difficulty = TriviaDifficulty.All, TriviaType type = TriviaType.All)
+		public async Task<RuntimeResult> Trivia([MinValue(5), MaxValue(50)] int total = 10, TriviaCategory category = TriviaCategory.Any, TriviaDifficulty difficulty = TriviaDifficulty.Any, TriviaType type = TriviaType.Any)
 		{
 			if (!await trivia.NewSession(Context, new TriviaOptions(total, category, difficulty, type)))
 			{
