@@ -2,6 +2,7 @@ using Discord;
 using Discord.Interactions;
 using Mayfly.Services;
 using Mayfly.Structures;
+using Mayfly.UrlBuilders;
 using RuntimeResult = Discord.Interactions.RuntimeResult;
 
 namespace Mayfly.Modules
@@ -17,9 +18,11 @@ namespace Mayfly.Modules
 		{
 			await DeferAsync();
 
-			string safe = string.Join("+", tags.Split(' ').Select(Uri.EscapeDataString));
-			GelbooruResult result = await Http.GetJsonAsync<GelbooruResult>($"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=20&json=1&tags=sort:random+score:>=3+{safe}");
+			//string safe = string.Join("+", tags.Split(' ').Select(Uri.EscapeDataString));
+			//GelbooruResult result = await Http.GetJsonAsync<GelbooruResult>($"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=20&json=1&tags=sort:random+score:>=3+{safe}");
 
+			GelbooruResult result = await Http.GetJsonAsync<GelbooruResult>(new GelbooruPostsBuilder().WithTags($"sort:random+score:>=3+{tags}").WithLimit(20).Build());
+			
 			if (result is { Posts.Count: > 0 })
 			{
 				GelbooruPost post = Random.Pick(result.Posts);
@@ -48,9 +51,11 @@ namespace Mayfly.Modules
 		{
 			await DeferAsync();
 			
-			string safe = string.Join("+", tags.Split(' ').Select(Uri.EscapeDataString));
-			Rule34Post[] posts = await Http.GetJsonAsync<Rule34Post[]>($"https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=20&tags=sort:random+{safe}");
+			//string safe = string.Join("+", tags.Split(' ').Select(Uri.EscapeDataString));
+			//Rule34Post[] posts = await Http.GetJsonAsync<Rule34Post[]>($"https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=20&tags=sort:random+{safe}");
 
+			Rule34Post[] posts = await Http.GetJsonAsync<Rule34Post[]>(new Rule34PostsBuilder().WithTags($"sort:random+{tags}").WithLimit(20).Build());
+			
 			if (posts is { Length: > 0 })
 			{
 				Rule34Post post = Random.Pick(posts);

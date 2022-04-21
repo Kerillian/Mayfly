@@ -11,6 +11,7 @@ using SixLabors.ImageSharp.Processing;
 using Mayfly.Extensions;
 using Mayfly.Services;
 using Mayfly.Structures;
+using Mayfly.UrlBuilders;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using Image = SixLabors.ImageSharp.Image;
 using RuntimeResult = Discord.Interactions.RuntimeResult;
@@ -345,8 +346,8 @@ namespace Mayfly.Modules
 		public async Task<RuntimeResult> OCR(string url)
 		{
 			await DeferAsync();
-			OCRSpaceResult ocr = await http.GetJsonAsync<OCRSpaceResult>($"https://api.ocr.space/parse/imageurl?apikey={config.OCRSpaceKey}&url={url}");
-
+			OCRSpaceResult ocr = await http.GetJsonAsync<OCRSpaceResult>(new OcrSpaceBuilder(config.OCRSpaceKey).WithUrl(url).Build());
+				
 			if (ocr is not null)
 			{
 				StringBuilder builder = new StringBuilder();

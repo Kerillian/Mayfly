@@ -4,6 +4,7 @@ using Discord;
 using Discord.Interactions;
 using Mayfly.Services;
 using Mayfly.Structures;
+using Mayfly.UrlBuilders;
 using Mayfly.Utilities;
 
 namespace Mayfly.Modules
@@ -63,28 +64,32 @@ namespace Mayfly.Modules
 		}
 
 		[SlashCommand("mal", "Search my anime list.")]
-		public async Task MyAnimeList(string query)
+		public async Task<RuntimeResult> MyAnimeList(string query)
 		{
 			await DeferAsync();
-			MalRoot data = await Http.GetJsonAsync<MalRoot>($"https://api.jikan.moe/v3/search/anime?q={Uri.EscapeDataString(query)}");
-
-			if (data != null)
+			MalSeachRoot search = await Http.GetJsonAsync<MalSeachRoot>(new JikanSearchBuilder().WithQuery(query).Build());
+			
+			if (search is { Data.Length: > 0 })
 			{
-				IEnumerable<EmbedBuilder> builders = data.Results.Select(x => new EmbedBuilder().WithTitle(x.Title).WithDescription(x.Synopsis).WithThumbnailUrl(x.ImageUrl).WithUrl(x.Url));
+				IEnumerable<EmbedBuilder> builders = search.Data.Select(x => new EmbedBuilder().WithTitle(x.Title).WithDescription(x.Synopsis).WithThumbnailUrl(x.Images.Jpg.ImageUrl).WithUrl(x.Url));
 
 				await Pagination.SendMessageAsync(Context, new PaginatedMessage(builders, null, Color.Green, Context.User, new AppearanceOptions()
 				{
 					Timeout = TimeSpan.FromMinutes(3),
 					Style = DisplayStyle.Selector
 				}), true);
+				
+				return MayflyResult.FromSuccess();
 			}
+			
+			return MayflyResult.FromError("NothingFound", "Couldn't find anything for that, sorry.");
 		}
 
 		[SlashCommand("trace", "Trace.moe in discord.")]
 		public async Task<RuntimeResult> TraceMoe(string url)
 		{
 			await DeferAsync();
-			TraceMoeResponse json = await Http.GetJsonAsync<TraceMoeResponse>("https://api.trace.moe/search?anilistInfo&url=" + Uri.EscapeDataString(url));
+			TraceMoeResponse json = await Http.GetJsonAsync<TraceMoeResponse>(new TraceMoeBuilder().WithUrl(url).Build());
 			
 			if (json is {Results.Count: > 0})
 			{

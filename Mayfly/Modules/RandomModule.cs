@@ -1,8 +1,8 @@
 using Discord;
 using Discord.Interactions;
-using Mayfly.Extensions;
 using Mayfly.Services;
 using Mayfly.Structures;
+using Mayfly.UrlBuilders;
 
 namespace Mayfly.Modules
 {
