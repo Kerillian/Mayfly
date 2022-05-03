@@ -19,7 +19,8 @@ namespace Mayfly.Services.Poll
 		private bool timeout;
 		
 		private DateTimeOffset endTime = DateTimeOffset.Now.AddMinutes(10);
-		private ComponentBuilder componentBuilder = new ComponentBuilder();
+		//private readonly ComponentBuilder componentBuilder = new ComponentBuilder();
+		private MessageComponent component;
 
 		public HashSet<ulong> Voters { get; } = new HashSet<ulong>();
 		public Dictionary<IEmote, PollOption> Options { get; } = new Dictionary<IEmote, PollOption>();
@@ -35,11 +36,15 @@ namespace Mayfly.Services.Poll
 			
 			Title = title;
 
+			ComponentBuilder builder = new ComponentBuilder();
+			
 			for (int i = 0; i < args.Length; i++)
 			{
 				Options.Add(new Emoji(OptionChars[i]), new PollOption(args[i]));
-				componentBuilder.WithButton(emote: new Emoji(OptionChars[i]), customId: OptionChars[i], style: ButtonStyle.Secondary);
+				builder.WithButton(emote: new Emoji(OptionChars[i]), customId: OptionChars[i], style: ButtonStyle.Secondary);
 			}
+
+			component = builder.Build();
 		}
 
 		public Embed Build()
@@ -66,7 +71,7 @@ namespace Mayfly.Services.Poll
 		{
 			endTime = DateTimeOffset.Now.AddMinutes(10);
 
-			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: Build(), components: componentBuilder.Build());
+			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: Build(), components: component);
 			Message = await ctx.Interaction.GetOriginalResponseAsync();
 		}
 
