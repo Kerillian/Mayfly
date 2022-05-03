@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using Mayfly.Database;
 using Mayfly.Services;
+using Mayfly.Utilities;
 
 namespace Mayfly.Modules
 {
@@ -18,21 +19,16 @@ namespace Mayfly.Modules
 
 			if (data is null)
 			{
-				return MayflyResult.FromError("QueryException", "Something went horrifically wrong on my end, please try again.");
+				return MayflyResult.FromError("QueryException", "No data for user.");
 			}
 
 			await RespondAsync(embed: new EmbedBuilder()
-			{
-				Title = Context.User.Username,
-				ThumbnailUrl = Context.User.GetAvatarUrl(),
-				Color = Color.Purple,
-				Description = Format.Code(string.Join("\n", new string[]
-				{
-					$"Level  : {DatabaseService.CalculateLevel(data.Experience)}",
-					$"Money  : ${data.Money:N0}",
-					$"Tokens : {data.Tokens:N0}"
-				}))
-			}.Build());
+				.WithAuthor($"{Context.User.Username}#{Context.User.Discriminator}", Context.User.GetAvatarUrl(ImageFormat.Auto, 32))
+				.WithColor(Color.Purple)
+				.WithDescription(Format.Code(new TableBuilder("Level", "Money", "Tokens")
+					.WithRow(DatabaseService.CalculateLevel(data.Experience).ToString(), $"${data.Money:N0}", $"{data.Tokens:N0}")
+					.Build()))
+				.Build());
 			
 			return MayflyResult.FromSuccess();
 		}

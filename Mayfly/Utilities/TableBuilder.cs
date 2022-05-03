@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Mayfly.Utilities
 {
@@ -85,6 +86,12 @@ namespace Mayfly.Utilities
 				
 				tableRows.Add(row);
 			}
+		}
+
+		public TableBuilder WithRow(params string[] row)
+		{
+			AddRow(row);
+			return this;
 		}
 
 		private string BuildTemplate()
