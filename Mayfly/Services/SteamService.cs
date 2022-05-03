@@ -94,7 +94,7 @@ namespace Mayfly.Services
 			{
 				ResolveVanityResult json = (await http.GetJsonAsync<SteamResponse<ResolveVanityResult>>(string.Format(SteamEndPoints.RESOLVE_VANITY_URL, config.SteamKey, vanity.Groups[1].Value))).Response;
 
-				if (json != null && json.Success == 1 && ulong.TryParse(json.SteamId, out ulong id))
+				if (json is { Success: 1 } && ulong.TryParse(json.SteamId, out ulong id))
 				{
 					SteamProfile profile = new SteamProfile(id);
 					await profile.Populate(http, config);
