@@ -1,10 +1,11 @@
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit;
 using Mayfly.UrlBuilders;
+using NUnit.Framework;
 
 namespace Mayfly.Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class UrlBuilderTests
 	{
 		private const string TENOR_SEARCH = "https://g.tenor.com/v1/search?key=XXXXXXXXXXXX&limit=10&q=test";
@@ -13,31 +14,31 @@ namespace Mayfly.Tests
 		private const string JIKAN_SEARCH = "https://api.jikan.moe/v4/anime?q=Spy%20x%20Family&limit=10&type=tv";
 		private const string TRACE_MOE_SEARCH = "https://api.trace.moe/search?anilistInfo&url=https%3A%2F%2Fraw.githubusercontent.com%2Fsoruly%2Ftrace.moe%2Fmaster%2Fdemo.jpg";
 
-		[TestMethod]
+		[Test]
 		public void Tenor()
 		{
 			Assert.AreEqual(new TenorSearchBuilder("XXXXXXXXXXXX").WithLimit(10).WithQuery("test").Build(), TENOR_SEARCH);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void Gelbooru()
 		{
 			Assert.AreEqual(new GelbooruPostsBuilder().WithTags("rating:safe red_eyes").WithLimit(50).Build(), GELBOORU_POSTS);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Rule34()
 		{
 			Assert.AreEqual(new Rule34PostsBuilder().WithTags("rating:safe blue_eyes").WithLimit(50).Build(), RULE34_POSTS);
 		}
 
-		[TestMethod]
+		[Test]
 		public void JikanSearch()
 		{
 			Assert.AreEqual(new JikanSearchBuilder().WithQuery("Spy x Family").WithLimit(10).WithType(JikanAnimeType.Tv).Build(), JIKAN_SEARCH);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void TraceMoe()
 		{
 			Assert.AreEqual(new TraceMoeBuilder().WithUrl("https://raw.githubusercontent.com/soruly/trace.moe/master/demo.jpg").Build(), TRACE_MOE_SEARCH);
