@@ -1,11 +1,9 @@
 using System;
-using NUnit;
 using Mayfly.UrlBuilders;
-using NUnit.Framework;
+using Xunit;
 
 namespace Mayfly.Tests
 {
-	[TestFixture]
 	public class UrlBuilderTests
 	{
 		private const string TENOR_SEARCH = "https://g.tenor.com/v1/search?key=XXXXXXXXXXXX&limit=10&q=test";
@@ -14,34 +12,34 @@ namespace Mayfly.Tests
 		private const string JIKAN_SEARCH = "https://api.jikan.moe/v4/anime?q=Spy%20x%20Family&limit=10&type=tv";
 		private const string TRACE_MOE_SEARCH = "https://api.trace.moe/search?anilistInfo&url=https%3A%2F%2Fraw.githubusercontent.com%2Fsoruly%2Ftrace.moe%2Fmaster%2Fdemo.jpg";
 
-		[Test]
+		[Fact]
 		public void Tenor()
 		{
-			Assert.AreEqual(new TenorSearchBuilder("XXXXXXXXXXXX").WithLimit(10).WithQuery("test").Build(), TENOR_SEARCH);
+			Assert.Equal(TENOR_SEARCH, new TenorSearchBuilder("XXXXXXXXXXXX").WithLimit(10).WithQuery("test").Build());
 		}
 		
-		[Test]
+		[Fact]
 		public void Gelbooru()
 		{
-			Assert.AreEqual(new GelbooruPostsBuilder().WithTags("rating:safe red_eyes").WithLimit(50).Build(), GELBOORU_POSTS);
+			Assert.Equal(GELBOORU_POSTS, new GelbooruPostsBuilder().WithTags("rating:safe red_eyes").WithLimit(50).Build());
 		}
 
-		[Test]
+		[Fact]
 		public void Rule34()
 		{
-			Assert.AreEqual(new Rule34PostsBuilder().WithTags("rating:safe blue_eyes").WithLimit(50).Build(), RULE34_POSTS);
+			Assert.Equal(RULE34_POSTS, new Rule34PostsBuilder().WithTags("rating:safe blue_eyes").WithLimit(50).Build());
 		}
 
-		[Test]
+		[Fact]
 		public void JikanSearch()
 		{
-			Assert.AreEqual(new JikanSearchBuilder().WithQuery("Spy x Family").WithLimit(10).WithType(JikanAnimeType.Tv).Build(), JIKAN_SEARCH);
+			Assert.Equal(JIKAN_SEARCH, new JikanSearchBuilder().WithQuery("Spy x Family").WithLimit(10).WithType(JikanAnimeType.Tv).Build());
 		}
 		
-		[Test]
+		[Fact]
 		public void TraceMoe()
 		{
-			Assert.AreEqual(new TraceMoeBuilder().WithUrl("https://raw.githubusercontent.com/soruly/trace.moe/master/demo.jpg").Build(), TRACE_MOE_SEARCH);
+			Assert.Equal(TRACE_MOE_SEARCH, new TraceMoeBuilder().WithUrl("https://raw.githubusercontent.com/soruly/trace.moe/master/demo.jpg").Build());
 		}
 	}
 }
