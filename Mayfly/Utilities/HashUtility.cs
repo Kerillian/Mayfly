@@ -7,29 +7,25 @@ namespace Mayfly.Utilities
 	{
 		public static string Md5(string str)
 		{
-			using MD5 algorithm = MD5.Create();
-			byte[] bytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(str));
+			byte[] bytes = MD5.HashData(Encoding.UTF8.GetBytes(str));
 			return string.Concat(bytes.Select(b => b.ToString("X2")));
 		}
 
 		public static string Sha1(string str)
 		{
-			using SHA1 algorithm = SHA1.Create();
-			byte[] bytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(str));
+			byte[] bytes = SHA1.HashData(Encoding.UTF8.GetBytes(str));
 			return string.Concat(bytes.Select(b => b.ToString("X2")));
 		}
 
 		public static string Sha256(string str)
 		{
-			using SHA256 algorithm = SHA256.Create();
-			byte[] bytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(str));
+			byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(str));
 			return string.Concat(bytes.Select(b => b.ToString("X2")));
 		}
 
 		public static string Sha512(string str)
 		{
-			using SHA512 algorithm = SHA512.Create();
-			byte[] bytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(str));
+			byte[] bytes = SHA512.HashData(Encoding.UTF8.GetBytes(str));
 			return string.Concat(bytes.Select(b => b.ToString("X2")));
 		}
 	}
