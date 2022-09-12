@@ -1,4 +1,3 @@
-using System;
 using Mayfly.UrlBuilders;
 using Xunit;
 
