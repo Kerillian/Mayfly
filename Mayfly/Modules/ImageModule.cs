@@ -1,7 +1,4 @@
-using System;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Mayfly.Attributes;
@@ -14,7 +11,6 @@ using Mayfly.Structures;
 using Mayfly.UrlBuilders;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using Image = SixLabors.ImageSharp.Image;
-using RuntimeResult = Discord.Interactions.RuntimeResult;
 
 namespace Mayfly.Modules
 {
