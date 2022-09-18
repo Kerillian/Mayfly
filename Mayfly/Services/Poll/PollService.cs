@@ -6,18 +6,24 @@ namespace Mayfly.Services.Poll
 {
 	public class PollService
 	{
+		private readonly TimeSpan timeout = TimeSpan.FromMinutes(1);
 		private readonly Dictionary<ulong, Poll> pollData = new Dictionary<ulong, Poll>();
 
 		public PollService(DiscordSocketClient dsc)
 		{
-			//discord.ReactionAdded += HandleReactions;
 			dsc.ButtonExecuted += HandleButtons;
 		}
 
 		private async Task HandleButtons(SocketMessageComponent interaction)
 		{
-			if (pollData.TryGetValue(interaction.Message.Id, out Poll poll) && !poll.Voters.Contains(interaction.User.Id))
+			if (pollData.TryGetValue(interaction.Message.Id, out Poll poll))
 			{
+				if (poll.Voters.Contains(interaction.User.Id))
+				{
+					await interaction.RespondAsync("Your vote has already been counted.", ephemeral: true);
+					return;
+				}
+				
 				await interaction.DeferAsync();
 				
 				if (poll.Options.TryGetValue(new Emoji(interaction.Data.CustomId), out PollOption option))
@@ -37,16 +43,15 @@ namespace Mayfly.Services.Poll
 				return false;
 			}
 			
-			Poll poll = new Poll(title, args);
-			
+			Poll poll = new Poll(title, DateTimeOffset.Now.Add(timeout), args);
+
 			await poll.Setup(ctx);
 			pollData.Add(poll.Message.Id, poll);
+
+			await Task.Delay(timeout);
+			await poll.Finish();
 			
-			Task _ = Task.Delay(TimeSpan.FromMinutes(10)).ContinueWith(async _ =>
-			{
-				pollData.Remove(poll.Message.Id);
-				await poll.Finish();
-			});
+			pollData.Remove(poll.Message.Id);
 
 			return true;
 		}
