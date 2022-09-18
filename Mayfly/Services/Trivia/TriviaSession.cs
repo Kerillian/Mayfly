@@ -34,17 +34,17 @@ namespace Mayfly.Services.Trivia
 			Color = Color.Green,
 		}.Build();
 
-		private readonly MessageComponent WaitingComponent = new ComponentBuilder()
+		private readonly MessageComponent waitingComponent = new ComponentBuilder()
 			.WithButton("Join", "join", ButtonStyle.Success, new Emoji(JOIN_EMOJI))
 			.WithButton("Start", "start", ButtonStyle.Secondary, new Emoji(START_EMOJI))
 			.Build();
 
-		private readonly MessageComponent TrueFalseComponent = new ComponentBuilder()
+		private readonly MessageComponent trueFalseComponent = new ComponentBuilder()
 			.WithButton("True", "true", ButtonStyle.Success, new Emoji(TRUE_EMOJI))
 			.WithButton("False", "false", ButtonStyle.Danger, new Emoji(FALSE_EMOJI))
 			.Build();
 
-		private readonly MessageComponent MultiChoiceComponent = new ComponentBuilder()
+		private readonly MessageComponent multiChoiceComponent = new ComponentBuilder()
 			.WithButton(emote: new Emoji(A_EMOJI), customId: "a", style: ButtonStyle.Secondary)
 			.WithButton(emote: new Emoji(B_EMOJI), customId: "b", style: ButtonStyle.Secondary)
 			.WithButton(emote: new Emoji(C_EMOJI), customId: "c", style: ButtonStyle.Secondary)
@@ -92,7 +92,7 @@ namespace Mayfly.Services.Trivia
 
 		public async Task Setup(SocketInteraction interaction, TriviaOptions options)
 		{
-			await interaction.RespondAsync(embed: presetEmbed, components: WaitingComponent);
+			await interaction.RespondAsync(embed: presetEmbed, components: waitingComponent);
 			message = await interaction.GetOriginalResponseAsync();
 			trivia = await http.GetJsonAsync<TriviaResult>(options.Build());
 			Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
@@ -243,7 +243,7 @@ namespace Mayfly.Services.Trivia
 				await message.ModifyAsync(m =>
 				{
 					m.Embed = builder.Build();
-					m.Components = question.IsBoolean ? TrueFalseComponent : MultiChoiceComponent;
+					m.Components = question.IsBoolean ? trueFalseComponent : multiChoiceComponent;
 				});
 
 				try
