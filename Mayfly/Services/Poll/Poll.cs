@@ -16,19 +16,15 @@ namespace Mayfly.Services.Poll
 		public string Title { get; }
 		public int TotalVotes { get; set; }
 		public bool Finished { get; private set; }
+		public DateTimeOffset EndTime { get; }
 		
 		private int lastVotes;
 		private DateTime time = DateTime.Now;
 		private Task rateLimitTask = Task.CompletedTask;
 		
-
-		private DateTimeOffset endTime = DateTimeOffset.Now;
-		//private readonly ComponentBuilder componentBuilder = new ComponentBuilder();
-		private MessageComponent component;
-
 		public HashSet<ulong> Voters { get; } = new HashSet<ulong>();
 		public Dictionary<IEmote, PollOption> Options { get; } = new Dictionary<IEmote, PollOption>();
-		public IUserMessage Message;
+		public IUserMessage Message { get; private set; }
 
 		public Poll(string title, DateTimeOffset timeout, string[] args)
 		{
@@ -38,20 +34,27 @@ namespace Mayfly.Services.Poll
 			}
 			
 			Title = title;
-			endTime = timeout;
-
-			ComponentBuilder builder = new ComponentBuilder();
+			EndTime = timeout;
 			
 			for (int i = 0; i < args.Length; i++)
 			{
 				Options.Add(new Emoji(OptionChars[i]), new PollOption(args[i]));
+			}
+		}
+
+		private MessageComponent BuildButtons()
+		{
+			ComponentBuilder builder = new ComponentBuilder();
+
+			for (int i = 0; i < Options.Count; i++)
+			{
 				builder.WithButton(emote: new Emoji(OptionChars[i]), customId: OptionChars[i], style: ButtonStyle.Secondary);
 			}
 
-			component = builder.Build();
+			return builder.Build();
 		}
 
-		public Embed Build()
+		private Embed Build()
 		{
 			return new EmbedBuilder()
 			{
@@ -73,7 +76,7 @@ namespace Mayfly.Services.Poll
 
 		public async Task Setup(SocketInteractionContext ctx)
 		{
-			await ctx.Interaction.RespondAsync($"Poll ends <t:{endTime.ToUnixTimeSeconds()}:R>", embed: Build(), components: component);
+			await ctx.Interaction.RespondAsync($"Poll ends <t:{EndTime.ToUnixTimeSeconds()}:R>", embed: Build(), components: BuildButtons());
 			Message = await ctx.Interaction.GetOriginalResponseAsync();
 		}
 
@@ -84,7 +87,7 @@ namespace Mayfly.Services.Poll
 				return;
 			}
 			
-			if (time > DateTime.Now)
+			if (time >= DateTime.Now)
 			{
 				if (rateLimitTask is not { Status: TaskStatus.Running })
 				{
@@ -115,60 +118,13 @@ namespace Mayfly.Services.Poll
 			await Message.ModifyAsync(x => x.Embed = Build());
 		}
 
-		// public async Task Update(bool ended = false)
-		// {
-		// 	if (Time > DateTime.Now)
-		// 	{
-		// 		if (!timeout)
-		// 		{
-		// 			Task _ = Task.Delay(DateTime.Now.Subtract(Time)).ContinueWith(async _t =>
-		// 			{
-		// 				await Message.ModifyAsync(x =>
-		// 				{
-		// 					x.Embed = Build();
-		//
-		// 					if (ended)
-		// 					{
-		// 						x.Content = $"Poll ended <t:{endTime.ToUnixTimeSeconds()}:R>";
-		// 						x.Components = null;
-		// 					}
-		// 				});
-		// 				
-		// 				timeout = false;
-		// 			});
-		// 			
-		// 			timeout = true;
-		// 		}
-		//
-		// 		return;
-		// 	}
-		//
-		// 	if (lastVotes == TotalVotes)
-		// 	{
-		// 		return;
-		// 	}
-		//
-		// 	lastVotes = TotalVotes;
-		// 	Time = DateTime.Now + TimeSpan.FromSeconds(3);
-		//
-		// 	await Message.ModifyAsync(x =>
-		// 	{
-		// 		x.Embed = Build();
-		// 		
-		// 		if (ended)
-		// 		{
-		// 			x.Content = $"Poll ended <t:{endTime.ToUnixTimeSeconds()}:R>";
-		// 		}
-		// 	});
-		// }
-		
 		public async Task Finish()
 		{
 			Finished = true;
 			
 			await Message.ModifyAsync(x =>
 			{
-				x.Content = $"Poll ended <t:{endTime.ToUnixTimeSeconds()}:R>";
+				x.Content = $"Poll ended <t:{EndTime.ToUnixTimeSeconds()}:R>";
 				x.Embed = Build();
 				x.Components = null;
 			});
