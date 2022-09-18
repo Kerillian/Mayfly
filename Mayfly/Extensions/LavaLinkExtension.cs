@@ -17,16 +17,16 @@ namespace Mayfly.Extensions
 			}
 			
 			(bool search, string url) = track.Source?.ToLower() switch {
-				var yt when yt.Contains("youtube")
+				{ } yt when yt.Contains("youtube")
 					=> (false, $"https://img.youtube.com/vi/{track.TrackIdentifier}/maxresdefault.jpg"),
 
-				var twitch when twitch.Contains("twitch")
+				{ } twitch when twitch.Contains("twitch")
 					=> (true, $"https://api.twitch.tv/v4/oembed?url={track.Source}"),
 
-				var sc when sc.Contains("soundcloud")
+				{ } sc when sc.Contains("soundcloud")
 					=> (true, $"https://soundcloud.com/oembed?url={track.Source}&format=json"),
 
-				var vim when vim.Contains("vimeo")
+				{ } vim when vim.Contains("vimeo")
 					=> (false, $"https://i.vimeocdn.com/video/{track.TrackIdentifier}.png"),
 
 				_ => (false, null)
