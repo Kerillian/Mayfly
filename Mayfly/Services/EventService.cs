@@ -2,6 +2,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Lavalink4NET.Logging;
+using Mayfly.Extensions;
 
 namespace Mayfly.Services
 {
@@ -35,64 +36,45 @@ namespace Mayfly.Services
 
 		private async Task HandleExecution(SlashCommandInfo info, IInteractionContext context, IResult result)
 		{
-			if (context.Channel is ISocketMessageChannel channel)
+			if (result.IsSuccess)
 			{
-				if (result.IsSuccess)
+				await database.ModifyUserAsync(context.User, data =>
 				{
-					await database.ModifyUserAsync(context.User, data =>
-					{
-						data.Experience += 1;
-						data.Invokes += 1;
-					});
+					data.Experience += 1;
+					data.Invokes += 1;
+				});
 				
-					return;
-				}
+				return;
+			}
 
-				EmbedBuilder embed;
+			EmbedBuilder embed;
 				
-				if (result is MayflyResult mResult)
-				{
-					embed = new EmbedBuilder()
-					{
-						Title = "Error: " + mResult.ErrorReason,
-						Color = Color.Red,
-						Description = mResult.Message
-					};
-
-					if (mResult.Error == InteractionCommandError.ParseFailed)
-					{
-						embed.Color = Color.Orange;
-					}
-
-
-					if (context.Interaction.HasResponded)
-					{
-						await context.Interaction.FollowupAsync(embed: embed.Build(), ephemeral: true);
-					}
-					else
-					{
-						await context.Interaction.RespondAsync(embed: embed.Build(), ephemeral: true);
-					}
-
-					return;
-				}
-
+			if (result is MayflyResult mResult)
+			{
 				embed = new EmbedBuilder()
 				{
-					Title = "Error: " + (result.Error?.ToString() ?? "Oof"),
+					Title = "Error: " + mResult.ErrorReason,
 					Color = Color.Red,
-					Description = result.ErrorReason ?? "Something broke."
+					Description = mResult.Message
 				};
-						
-				if (context.Interaction.HasResponded)
+
+				if (mResult.Error == InteractionCommandError.ParseFailed)
 				{
-					await context.Interaction.FollowupAsync(embed: embed.Build(), ephemeral: true);
+					embed.Color = Color.Orange;
 				}
-				else
-				{
-					await context.Interaction.RespondAsync(embed: embed.Build(), ephemeral: true);
-				}
+
+				await context.Interaction.RespondOrFollowup(embed: embed.Build(), ephemeral: true);
+				return;
 			}
+
+			embed = new EmbedBuilder()
+			{
+				Title = "Error: " + (result.Error?.ToString() ?? "Oof"),
+				Color = Color.Red,
+				Description = result.ErrorReason ?? "Something broke."
+			};
+
+			await context.Interaction.RespondOrFollowup(embed: embed.Build(), ephemeral: true);
 		}
 
 		private async Task HandleInteraction(SocketInteraction si)
@@ -110,15 +92,8 @@ namespace Mayfly.Services
 					Color = Color.Red,
 					Description = ex.Message
 				}.Build();
-						
-				if (si.HasResponded)
-				{
-					await si.FollowupAsync(embed: embed, ephemeral: true);
-				}
-				else
-				{
-					await si.RespondAsync(embed: embed, ephemeral: true);
-				}
+
+				await si.RespondOrFollowup(embed: embed, ephemeral: true);
 			}
 		}
 		
