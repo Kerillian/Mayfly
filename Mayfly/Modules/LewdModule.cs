@@ -13,14 +13,10 @@ namespace Mayfly.Modules
 		public HttpService Http { get; set; }
 		public RandomService Random { get; set; }
 
-		[SlashCommand("gelbooru", "Anime titties.")]
+		[SlashCommand("gelbooru", "Anime moment.")]
 		public async Task<RuntimeResult> Gelbooru(string tags = "")
 		{
 			await DeferAsync();
-
-			//string safe = string.Join("+", tags.Split(' ').Select(Uri.EscapeDataString));
-			//GelbooruResult result = await Http.GetJsonAsync<GelbooruResult>($"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=20&json=1&tags=sort:random+score:>=3+{safe}");
-
 			GelbooruResult result = await Http.GetJsonAsync<GelbooruResult>(new GelbooruPostsBuilder().WithTags($"sort:random+score:>=3+{tags}").WithLimit(20).Build());
 			
 			if (result is { Posts.Count: > 0 })
@@ -46,14 +42,10 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("EmptyResult", "Couldn't not find any images with provided tags.");
 		}
 
-		[SlashCommand("rule34", "Video game titties.")]
+		[SlashCommand("rule34", "If it exists...")]
 		public async Task<RuntimeResult> Rule34(string tags = "")
 		{
 			await DeferAsync();
-			
-			//string safe = string.Join("+", tags.Split(' ').Select(Uri.EscapeDataString));
-			//Rule34Post[] posts = await Http.GetJsonAsync<Rule34Post[]>($"https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=20&tags=sort:random+{safe}");
-
 			Rule34Post[] posts = await Http.GetJsonAsync<Rule34Post[]>(new Rule34PostsBuilder().WithTags($"sort:random+{tags}").WithLimit(20).Build());
 			
 			if (posts is { Length: > 0 })
@@ -79,7 +71,7 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("EmptyResult", "Couldn't not find any images with provided tags.");
 		}
 
-		[SlashCommand("redgifs", "3D titties.")]
+		[SlashCommand("redgifs", "90% of these are in fact, not red. False advertising imo.")]
 		public async Task<RuntimeResult> Redgifs()
 		{
 			await DeferAsync();
