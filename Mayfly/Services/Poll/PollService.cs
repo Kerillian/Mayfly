@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Collections.Concurrent;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 
@@ -6,12 +7,27 @@ namespace Mayfly.Services.Poll
 {
 	public class PollService
 	{
-		private readonly TimeSpan timeout = TimeSpan.FromMinutes(1);
-		private readonly Dictionary<ulong, Poll> pollData = new Dictionary<ulong, Poll>();
+		private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(1);
+		private readonly ConcurrentDictionary<ulong, Poll> pollData = new ConcurrentDictionary<ulong, Poll>();
 
 		public PollService(DiscordSocketClient dsc)
 		{
 			dsc.ButtonExecuted += HandleButtons;
+			dsc.MessageDeleted += OnMessageDeleted;
+		}
+
+		private Task OnMessageDeleted(Cacheable<IMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel)
+		{
+			foreach (KeyValuePair<ulong, Poll> pair in pollData)
+			{
+				if (pair.Value.Message.Id == message.Id)
+				{
+					pair.Value.Cancel();
+					break;
+				}
+			}
+
+			return Task.CompletedTask;
 		}
 
 		private async Task HandleButtons(SocketMessageComponent interaction)
@@ -43,15 +59,17 @@ namespace Mayfly.Services.Poll
 				return false;
 			}
 			
-			Poll poll = new Poll(title, DateTimeOffset.Now.Add(timeout), args);
+			Poll poll = new Poll(title, DateTimeOffset.Now.Add(Timeout), args);
 
 			await poll.Setup(ctx);
-			pollData.Add(poll.Message.Id, poll);
+			pollData.TryAdd(poll.Message.Id, poll);
 
-			await Task.Delay(timeout);
-			await poll.Finish();
-			
-			pollData.Remove(poll.Message.Id);
+			if (await poll.Timeout(Timeout))
+			{
+				await poll.Finish();
+			}
+
+			pollData.TryRemove(poll.Message.Id, out _);
 
 			return true;
 		}

@@ -21,6 +21,7 @@ namespace Mayfly.Services.Poll
 		private int lastVotes;
 		private DateTime time = DateTime.Now;
 		private Task rateLimitTask = Task.CompletedTask;
+		private CancellationTokenSource timeoutToken = new CancellationTokenSource();
 		
 		public HashSet<ulong> Voters { get; } = new HashSet<ulong>();
 		public Dictionary<IEmote, PollOption> Options { get; } = new Dictionary<IEmote, PollOption>();
@@ -118,6 +119,26 @@ namespace Mayfly.Services.Poll
 			await Message.ModifyAsync(x => x.Embed = Build());
 		}
 
+		public async Task<bool> Timeout(TimeSpan span)
+		{
+			try
+			{
+				await Task.Delay(span, timeoutToken.Token);
+				return true;
+			}
+			catch { /* Ignore */ }
+
+			return false;
+		}
+
+		public void Cancel()
+		{
+			using (timeoutToken)
+			{
+				timeoutToken.Cancel();
+			}
+		}
+		
 		public async Task Finish()
 		{
 			Finished = true;
