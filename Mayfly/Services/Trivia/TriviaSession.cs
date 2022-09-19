@@ -17,22 +17,12 @@ namespace Mayfly.Services.Trivia
 		private const string FALSE_EMOJI = "⭕";
 		private const string JOIN_EMOJI = "➕";
 		private const string START_EMOJI = "▶️";
-		
-		private readonly HttpService http;
-		private ConcurrentDictionary<ulong, TriviaPlayer> Players = new ConcurrentDictionary<ulong, TriviaPlayer>();
-		private IUserMessage message;
-		private bool waitingForPlayers = true;
-		private readonly ulong host;
-		private CancellationTokenSource cancelQuestionWait = new CancellationTokenSource();
-		private CancellationTokenSource cancelJoinWait = new CancellationTokenSource();
-		private CancellationTokenSource cancelDeleted = new CancellationTokenSource();
 
 		private readonly Embed presetEmbed = new EmbedBuilder()
-		{
-			Title = "Trivia Lobby",
-			Description = "To play click the  icon below!\n\n_(If you are the host, you can click the ▶️ to start)_",
-			Color = Color.Green,
-		}.Build();
+			.WithTitle("Trivia Lobby")
+			.WithDescription("To play click the icon below!\n\n_(If you are the host, you can click the ▶️ to start)_")
+			.WithColor(Color.Green)
+			.Build();
 
 		private readonly MessageComponent waitingComponent = new ComponentBuilder()
 			.WithButton("Join", "join", ButtonStyle.Success, new Emoji(JOIN_EMOJI))
@@ -43,7 +33,7 @@ namespace Mayfly.Services.Trivia
 			.WithButton("True", "true", ButtonStyle.Success, new Emoji(TRUE_EMOJI))
 			.WithButton("False", "false", ButtonStyle.Danger, new Emoji(FALSE_EMOJI))
 			.Build();
-
+		
 		private readonly MessageComponent multiChoiceComponent = new ComponentBuilder()
 			.WithButton(emote: new Emoji(A_EMOJI), customId: "a", style: ButtonStyle.Secondary)
 			.WithButton(emote: new Emoji(B_EMOJI), customId: "b", style: ButtonStyle.Secondary)
@@ -51,15 +41,25 @@ namespace Mayfly.Services.Trivia
 			.WithButton(emote: new Emoji(D_EMOJI), customId: "d", style: ButtonStyle.Secondary)
 			.Build();
 
+		private readonly HttpService http;
+		private CancellationTokenSource cancelQuestionWait = new CancellationTokenSource();
+		private CancellationTokenSource cancelJoinWait = new CancellationTokenSource();
+		private CancellationTokenSource cancelDeleted = new CancellationTokenSource();
+
 		private TriviaResult trivia;
 		private TriviaQuestion question;
 		private readonly Dictionary<string, string> answerDict = new Dictionary<string, string>();
 		private int answered;
+		
+		public ulong HostId { get; }
+		public bool WaitingForPlayers { get; private set; } = true;
+		public IUserMessage Message { get; private set; }
+		public ConcurrentDictionary<ulong, TriviaPlayer> Players { get; } = new ConcurrentDictionary<ulong, TriviaPlayer>();
 
-		public TriviaSession(HttpService hs, ulong host)
+		public TriviaSession(HttpService hs, ulong hostId)
 		{
 			http = hs;
-			host = host;
+			HostId = hostId;
 		}
 
 		private string OptionToEmote(string option)
@@ -77,7 +77,7 @@ namespace Mayfly.Services.Trivia
 
 		public bool IsMyMessage(ulong id)
 		{
-			return message.Id == id;
+			return Message.Id == id;
 		}
 
 		public void ForceStop()
@@ -93,7 +93,7 @@ namespace Mayfly.Services.Trivia
 		public async Task Setup(SocketInteraction interaction, TriviaOptions options)
 		{
 			await interaction.RespondAsync(embed: presetEmbed, components: waitingComponent);
-			message = await interaction.GetOriginalResponseAsync();
+			Message = await interaction.GetOriginalResponseAsync();
 			trivia = await http.GetJsonAsync<TriviaResult>(options.Build());
 			Players.TryAdd(interaction.User.Id, new TriviaPlayer(interaction.User.Username));
 			
@@ -117,12 +117,12 @@ namespace Mayfly.Services.Trivia
 		
 		public void HandleButtons(SocketMessageComponent interaction)
 		{
-			if (interaction.Message.Id != message.Id)
+			if (interaction.Message.Id != Message.Id)
 			{
 				return;
 			}
 		
-			if (waitingForPlayers)
+			if (WaitingForPlayers)
 			{
 				switch (interaction.Data.CustomId)
 				{
@@ -130,9 +130,9 @@ namespace Mayfly.Services.Trivia
 					{
 						Console.WriteLine($"{interaction.User.Username}: Tried to start the game!");
 						
-						if (interaction.User.Id == host)
+						if (interaction.User.Id == HostId)
 						{
-							waitingForPlayers = false;
+							WaitingForPlayers = false;
 							
 							Console.WriteLine($"{interaction.User.Username}: Started the game!");
 							
@@ -240,7 +240,7 @@ namespace Mayfly.Services.Trivia
 					}
 				};
 
-				await message.ModifyAsync(m =>
+				await Message.ModifyAsync(m =>
 				{
 					m.Embed = builder.Build();
 					m.Components = question.IsBoolean ? trueFalseComponent : multiChoiceComponent;
@@ -263,7 +263,7 @@ namespace Mayfly.Services.Trivia
 					}
 				}
 
-				await message.ModifyAsync(m => m.Embed = new EmbedBuilder()
+				await Message.ModifyAsync(m => m.Embed = new EmbedBuilder()
 				{
 					Title = "Answer Result",
 					Color = Color.DarkGreen,
@@ -281,7 +281,7 @@ namespace Mayfly.Services.Trivia
 				table.AddRow(player.Username, player.Score.ToString(), player.Correct.ToString(), player.Wrong.ToString());
 			}
 
-			await message.ModifyAsync(x =>
+			await Message.ModifyAsync(x =>
 			{
 				x.Components = null;
 				x.Embed = new EmbedBuilder()
