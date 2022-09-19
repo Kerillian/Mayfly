@@ -2,12 +2,11 @@
 
 namespace Mayfly
 {
-
 	public class MayflyResult : RuntimeResult
 	{
 		public string Message { get; }
 
-		public MayflyResult(InteractionCommandError? error, string reason, string message) : base(error, reason)
+		private MayflyResult(InteractionCommandError? error, string reason, string message) : base(error, reason)
 		{
 			Message = message;
 		}

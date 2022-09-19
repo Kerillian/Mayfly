@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace Mayfly.Structures
 {
@@ -28,7 +26,7 @@ namespace Mayfly.Structures
 		public bool IsBoolean => Type == "boolean";
 
 		[JsonIgnore]
-		public string[] ShuffledItems => IncorrectAnswers.Append(CorrectAnswer).OrderBy(a => Guid.NewGuid()).ToArray();
+		public string[] ShuffledItems => IncorrectAnswers.Append(CorrectAnswer).OrderBy(_ => Guid.NewGuid()).ToArray();
 
 		public bool IsCorrect(string answer)
 		{
