@@ -82,12 +82,32 @@ namespace Mayfly.Services.Trivia
 
 		public void ForceStop()
 		{
-			using (cancelDeleted)
+			try
 			{
-				cancelDeleted.Cancel();
-				cancelQuestionWait.Cancel();
-				cancelJoinWait.Cancel();
+				using (cancelDeleted)
+				{
+					cancelDeleted.Cancel();
+				}
 			}
+			catch (ObjectDisposedException) { }
+			
+			try
+			{
+				using (cancelQuestionWait)
+				{
+					cancelQuestionWait.Cancel();
+				}
+			}
+			catch (ObjectDisposedException) { }
+			
+			try
+			{
+				using (cancelJoinWait)
+				{
+					cancelJoinWait.Cancel();
+				}
+			}
+			catch (ObjectDisposedException) { }
 		}
 
 		public async Task Setup(SocketInteraction interaction, TriviaOptions options)
@@ -242,13 +262,14 @@ namespace Mayfly.Services.Trivia
 
 				await Message.ModifyAsync(m =>
 				{
+					m.Content = $"Next question <t:{DateTimeOffset.Now.AddSeconds(30).ToUnixTimeSeconds()}:R>";
 					m.Embed = builder.Build();
 					m.Components = question.IsBoolean ? trueFalseComponent : multiChoiceComponent;
 				});
 
 				try
 				{
-					await Task.Delay(30000, cancelQuestionWait.Token);
+					await Task.Delay(TimeSpan.FromSeconds(30), cancelQuestionWait.Token);
 				}
 				catch { /* Ignored */ }
 
@@ -263,12 +284,17 @@ namespace Mayfly.Services.Trivia
 					}
 				}
 
-				await Message.ModifyAsync(m => m.Embed = new EmbedBuilder()
+				await Message.ModifyAsync(m =>
 				{
-					Title = "Answer Result",
-					Color = Color.DarkGreen,
-					Description = answer,
-				}.Build());
+					m.Content = "";
+					m.Components = null;
+					m.Embed = new EmbedBuilder()
+					{
+						Title = "Answer Result",
+						Color = Color.DarkGreen,
+						Description = answer,
+					}.Build();
+				});
 
 				answered = 0;
 				await Task.Delay(3000);

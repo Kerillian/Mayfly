@@ -8,27 +8,33 @@ namespace Mayfly.Services.Trivia
 	public class TriviaService
 	{
 		private readonly ConcurrentDictionary<ulong, TriviaSession> sessions = new ConcurrentDictionary<ulong, TriviaSession>();
-		private readonly DiscordSocketClient discord;
 		private readonly HttpService http;
 
 		public TriviaService(DiscordSocketClient dsc, HttpService hh)
 		{
-			discord = dsc;
 			http = hh;
 
-			discord.ButtonExecuted += HandleButtons;
-			discord.MessageDeleted += OnMessageDeleted;
+			dsc.ButtonExecuted += HandleButtons;
+			dsc.MessageDeleted += OnMessageDeleted;
 		}
 
 		private Task OnMessageDeleted(Cacheable<IMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel)
 		{
+			ulong id = 0;
+			
 			foreach (KeyValuePair<ulong,TriviaSession> pair in sessions)
 			{
 				if (pair.Value.IsMyMessage(message.Id))
 				{
 					pair.Value.ForceStop();
+					id = pair.Key;
 					break;
 				}
+			}
+
+			if (id != 0)
+			{
+				sessions.TryRemove(id, out _);
 			}
 
 			return Task.CompletedTask;
@@ -57,7 +63,7 @@ namespace Mayfly.Services.Trivia
 				}
 				catch { /* ignore */ }
 
-				sessions.TryRemove(ctx.Guild.Id, out session);
+				sessions.TryRemove(ctx.Guild.Id, out _);
 				return true;
 			}
 
