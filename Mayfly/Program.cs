@@ -52,6 +52,7 @@ namespace Mayfly
 				.AddSingleton<SteamService>()
 				.AddSingleton<TriviaService>()
 				.AddSingleton<WaifulabsService>()
+				.AddSingleton<SpotifyService>()
 				
 				.AddSingleton<IAudioService, LavalinkNode>()
 				.AddSingleton<IDiscordClientWrapper, DiscordClientWrapper>()

@@ -17,6 +17,7 @@ namespace Mayfly.Modules
 		public IAudioService LavaNode { private get; set; }
 		public PaginationService Pagination { private get; set; }
 		public RandomService RandomService { private get; set; }
+		public SpotifyService SpotifyService { private get; set; }
 		
 		private async ValueTask<(MayflyPlayer, MayflyResult)> GetPlayer(bool autoConnect = false)
 		{
@@ -90,6 +91,15 @@ namespace Mayfly.Modules
 			if (query.Contains("youtube.com") || query.Contains("youtu.be") || query.Contains("soundcloud.com"))
 			{
 				track = await LavaNode.GetTrackAsync(query);
+			}
+			else if (query.Contains("open.spotify.com"))
+			{
+				List<string> tracks = await SpotifyService.Search(query);
+
+				if (tracks.Count > 0)
+				{
+					track = await LavaNode.GetTrackAsync(tracks.First(), SearchMode.YouTube);
+				}
 			}
 
 			if (track is null)
