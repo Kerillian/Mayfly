@@ -113,12 +113,10 @@ namespace Mayfly.Modules
 		{
 			for (int y = 0; y < image.Height; y++)
 			{
-				Span<Rgba32> row = image.GetPixelRowSpan(y);
-				
 				for (int x = 0; x < image.Width; x++)
 				{
-					Rgba32 c = row[x];
-					row[x] = new Rgba32(c.R >> ~(c.R / 2), c.G >> ~(c.G / 2), c.B >> ~(c.B / 2), c.A);
+					Rgba32 c = image[x, y];
+					image[x, y] = new Rgba32(c.R >> ~(c.R / 2), c.G >> ~(c.G / 2), c.B >> ~(c.B / 2), c.A);
 				}
 			}
 		}
