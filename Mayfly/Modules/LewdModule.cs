@@ -86,7 +86,7 @@ namespace Mayfly.Modules
 			return MayflyResult.FromError("ServiceError", "Something went wrong!");
 		}
 
-		[SlashCommand("random", "All titties.")]
+		[SlashCommand("random", "Spin the wheel.")]
 		public async Task<RuntimeResult> All(string tags = "")
 		{
 			return Random.Next(2) switch
