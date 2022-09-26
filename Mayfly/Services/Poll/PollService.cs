@@ -7,7 +7,7 @@ namespace Mayfly.Services.Poll
 {
 	public class PollService
 	{
-		private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(1);
+		private static readonly TimeSpan Timeout = TimeSpan.FromHours(1);
 		private readonly ConcurrentDictionary<ulong, Poll> pollData = new ConcurrentDictionary<ulong, Poll>();
 
 		public PollService(DiscordSocketClient dsc)
