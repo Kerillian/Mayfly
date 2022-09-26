@@ -23,6 +23,7 @@ namespace Mayfly.Services
 			provider = isp;
 			
 			client.InteractionCreated += HandleInteraction;
+			interaction.ModalCommandExecuted += HandleModal;
 			interaction.SlashCommandExecuted += HandleExecution;
 			interaction.Log += OnLogAsync;
 
@@ -31,6 +32,26 @@ namespace Mayfly.Services
 			if (logger is EventLogger log)
 			{
 				log.LogMessage += OnLogAsync;
+			}
+		}
+
+		private async Task HandleModal(ModalCommandInfo info, IInteractionContext context, IResult result)
+		{
+			if (!result.IsSuccess && result is MayflyResult mResult)
+			{
+				EmbedBuilder embed = new EmbedBuilder()
+				{
+					Title = "Error: " + mResult.ErrorReason,
+					Color = Color.Red,
+					Description = mResult.Message
+				};
+
+				if (mResult.Error == InteractionCommandError.ParseFailed)
+				{
+					embed.Color = Color.Orange;
+				}
+
+				await context.Interaction.RespondOrFollowup(embed: embed.Build(), ephemeral: true);
 			}
 		}
 
