@@ -11,6 +11,7 @@ namespace Mayfly.Utilities
 		public IUser User { get; }
 		public ISocketMessageChannel Channel { get; }
 		public IDiscordInteraction Interaction { get; set; }
+		public IMessage? QueueMessage { get; set; }
 
 		public QueueInfo(IUser user, ISocketMessageChannel channel)
 		{
@@ -34,6 +35,11 @@ namespace Mayfly.Utilities
 				else
 				{
 					lastId = (await info.Channel.SendMessageAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
+				}
+				
+				if (info.QueueMessage is not null)
+				{
+					await info.QueueMessage.DeleteAsync();
 				}
 			}
 			

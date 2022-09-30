@@ -122,7 +122,7 @@ namespace Mayfly.Modules
 			
 			if (await player.PlayAsync(track, true) > 0)
 			{
-				await FollowupAsync(embed: await track.GetEmbedAsync("Queued"));
+				info.QueueMessage = await FollowupAsync(embed: await track.GetEmbedAsync("Queued"));
 			}
 			else
 			{
