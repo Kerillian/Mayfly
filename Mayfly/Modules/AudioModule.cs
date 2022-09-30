@@ -311,8 +311,7 @@ namespace Mayfly.Modules
 
 			if (IsAdmin() || IsDJ() || IsRequester(player.CurrentTrack) && player.Queue.IsEmpty)
 			{
-				await player.StopAsync();
-				await player.DisconnectAsync();
+				await player.StopAsync(true);
 				await RespondAsync("Cya.");
 				return MayflyResult.FromSuccess();
 			}
