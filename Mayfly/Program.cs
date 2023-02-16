@@ -110,7 +110,7 @@ namespace Mayfly
 
 			client.Ready += async () =>
 			{
-				//await audio.InitializeAsync();
+				await audio.InitializeAsync();
 				
 				#if DEBUG
 					await interaction.RegisterCommandsToGuildAsync(config.DebugID);
