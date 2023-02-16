@@ -11,6 +11,7 @@ namespace Mayfly.Modules
 	public class LewdModule : MayflyModule
 	{
 		public HttpService Http { get; set; }
+		public RedGifsService RedGifs { get; set; }
 		public RandomService Random { get; set; }
 
 		[SlashCommand("gelbooru", "Anime moment.")]
@@ -71,15 +72,44 @@ namespace Mayfly.Modules
 			return MayflyResult.FromUserError("EmptyResult", "Couldn't not find any images with provided tags.");
 		}
 
-		[SlashCommand("redgifs", "90% of these are in fact, not red. False advertising imo.")]
-		public async Task<RuntimeResult> Redgifs()
+		[SlashCommand("realbooru", "Booru but 3D")]
+		public async Task<RuntimeResult> Realbooru(string tags = "")
 		{
 			await DeferAsync();
-			RedgifsResult result = await Http.GetJsonAsync<RedgifsResult>($"https://api.redgifs.com/v2/gifs/search");
+			RealbooruPost[] posts = await Http.GetJsonAsync<RealbooruPost[]>(new RealbooruBuilder().WithTags($"sort:random+{tags}").WithLimit(20).Build());
+			
+			if (posts is { Length: > 0 })
+			{
+				RealbooruPost post = Random.Pick(posts);
+				
+				if (post.Url.EndsWith(".webm") || post.Url.EndsWith(".mp4"))
+				{
+					await FollowupAsync(post.Url);
+				}
+				else
+				{
+					await FollowupAsync(embed: new EmbedBuilder()
+					{
+						Color = Color.Blue,
+						ImageUrl = post.Url
+					}.Build());
+				}
+				
+				return MayflyResult.FromSuccess();
+			}
+			
+			return MayflyResult.FromUserError("EmptyResult", "Couldn't not find any images with provided tags.");
+		}
+
+		[SlashCommand("redgifs", "90% of these are in fact, not red. False advertising imo.")]
+		public async Task<RuntimeResult> Redgifs(string query = "")
+		{
+			await DeferAsync();
+			RedgifsResult result = await RedGifs.Search(query);
 
 			if (result is { Total: > 0 })
 			{
-				await FollowupAsync(Random.Pick(result.Gifs).Urls.HD);
+				await FollowupAsync($"https://redgifs.com/watch/{Random.Pick(result.Gifs).Id}");
 				return MayflyResult.FromSuccess();
 			}
 			

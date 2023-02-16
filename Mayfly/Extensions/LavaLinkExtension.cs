@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
-using Discord;
+﻿using Discord;
 using Lavalink4NET.Player;
+using Lavalink4NET.Artwork;
 using Mayfly.Utilities;
 
 namespace Mayfly.Extensions
@@ -8,42 +8,18 @@ namespace Mayfly.Extensions
 	public static class LavaLinkExtension
 	{
 		public const string DEFAULT_THUMBNAIL = "https://i.imgur.com/jR8gyDi.png";
-		
+
 		private static async ValueTask<string> GetThumbnail(this LavalinkTrack? track)
 		{
-			if (track?.Source is null)
-			{
-				return DEFAULT_THUMBNAIL;
-			}
+			using ArtworkService artwork = new ArtworkService();
 			
-			(bool search, string url) = track.Source?.ToLower() switch {
-				{ } yt when yt.Contains("youtube")
-					=> (false, $"https://img.youtube.com/vi/{track.TrackIdentifier}/maxresdefault.jpg"),
-
-				{ } twitch when twitch.Contains("twitch")
-					=> (true, $"https://api.twitch.tv/v4/oembed?url={track.Source}"),
-
-				{ } sc when sc.Contains("soundcloud")
-					=> (true, $"https://soundcloud.com/oembed?url={track.Source}&format=json"),
-
-				{ } vim when vim.Contains("vimeo")
-					=> (false, $"https://i.vimeocdn.com/video/{track.TrackIdentifier}.png"),
-
-				_ => (false, null)
-			};
-
-			if (!search)
+			if (track is { SourceName: { } })
 			{
-				return url;
+				Uri url = await artwork.ResolveAsync(track);
+				return url is null ? DEFAULT_THUMBNAIL : url.ToString();
 			}
 
-			using HttpClient client = new HttpClient();
-			HttpResponseMessage response = await client.GetAsync(url);
-			using HttpContent content = response.Content;
-			await using Stream stream = await content.ReadAsStreamAsync();
-			JsonDocument document = await JsonDocument.ParseAsync(stream);
-						
-			return document.RootElement.TryGetProperty("thumbnail_url", out JsonElement thumbnail) ? $"{thumbnail}" : url;
+			return DEFAULT_THUMBNAIL;
 		}
 
 		public static async Task<Embed> GetEmbedAsync(this LavalinkTrack track, string prefix = null, Color? color = null, string defaultThumbnail = null)

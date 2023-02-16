@@ -12,6 +12,7 @@ namespace Mayfly.Utilities
 		public ISocketMessageChannel Channel { get; }
 		public IDiscordInteraction Interaction { get; set; }
 		public IMessage? QueueMessage { get; set; }
+		public IMessage? Message { get; set; }
 
 		public QueueInfo(IUser user, ISocketMessageChannel channel)
 		{
@@ -22,19 +23,17 @@ namespace Mayfly.Utilities
 	
 	public class MayflyPlayer : VoteLavalinkPlayer
 	{
-		private ulong lastId;
-
 		public override async Task OnTrackStartedAsync(TrackStartedEventArgs e)
 		{
 			if (State == PlayerState.Playing && CurrentTrack?.Context is QueueInfo info)
 			{
 				if (info.Interaction != null)
 				{
-					lastId = (await info.Interaction.FollowupAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
+					info.Message = await info.Interaction.FollowupAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"));
 				}
 				else
 				{
-					lastId = (await info.Channel.SendMessageAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"))).Id;
+					info.Message = await info.Channel.SendMessageAsync(embed: await CurrentTrack.GetEmbedAsync("Playing"));
 				}
 				
 				if (info.QueueMessage is not null)
@@ -46,17 +45,25 @@ namespace Mayfly.Utilities
 			await base.OnTrackStartedAsync(e);
 		}
 
+		public override async Task SkipAsync(int count = 1)
+		{
+			if (CurrentTrack?.Context is QueueInfo { Message: { } } info)
+			{
+				await info.Message.DeleteAsync();
+			}
+			
+			await base.SkipAsync(count);
+		}
+
 		public override async Task OnTrackEndAsync(TrackEndEventArgs e)
 		{
-			if (CurrentTrack?.Context is QueueInfo info && lastId != 0)
+			if (CurrentTrack?.Context is QueueInfo { Message: { } } info)
 			{
-				await info.Channel.DeleteMessageAsync(lastId);
-				lastId = 0;
+				await info.Message.DeleteAsync();
 			}
 
-			Task _ = Task.Run(async () =>
+			_ = Task.Delay(1000).ContinueWith(async _ =>
 			{
-				await Task.Delay(1000);
 				if (State != PlayerState.Playing && Queue.IsEmpty)
 				{
 					await DisconnectAsync();

@@ -49,6 +49,7 @@ namespace Mayfly
 				.AddSingleton<AkinatorService>()
 				.AddSingleton<PollService>()
 				.AddSingleton<HttpService>()
+				.AddSingleton<RedGifsService>()
 				.AddSingleton<SteamService>()
 				.AddSingleton<TriviaService>()
 				.AddSingleton<WaifulabsService>()
@@ -109,7 +110,7 @@ namespace Mayfly
 
 			client.Ready += async () =>
 			{
-				await audio.InitializeAsync();
+				//await audio.InitializeAsync();
 				
 				#if DEBUG
 					await interaction.RegisterCommandsToGuildAsync(config.DebugID);

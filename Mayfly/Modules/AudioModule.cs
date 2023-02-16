@@ -30,7 +30,7 @@ namespace Mayfly.Modules
 
 			if (player?.VoiceChannelId.HasValue == false)
 			{
-				player.Dispose();
+				await player.DisposeAsync();
 				player = null;
 			}
 
@@ -483,17 +483,8 @@ namespace Mayfly.Modules
 			{
 				return MayflyResult.FromError("NotPermissible", "You can't modify filters, only admins and DJs can.");
 			}
-
-			player.Filters.Distortion = null;
-			player.Filters.Equalizer = null;
-			player.Filters.Karaoke = null;
-			player.Filters.Rotation = null;
-			player.Filters.Timescale = null;
-			player.Filters.Tremolo = null;
-			player.Filters.Vibrato = null;
-			player.Filters.Volume = null;
-			player.Filters.ChannelMix = null;
-			player.Filters.LowPass = null;
+			
+			player.Filters.Clear();
 
 			await player.Filters.CommitAsync();
 			await RespondAsync("Reset filters.");
