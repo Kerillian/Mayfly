@@ -1,4 +1,5 @@
 using System.Drawing;
+using Color = System.Drawing.Color;
 using DiscordColor = Discord.Color;
 
 namespace Mayfly.Utilities

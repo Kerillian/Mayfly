@@ -1,6 +1,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Color = Discord.Color;
 
 namespace Mayfly.Services
 {

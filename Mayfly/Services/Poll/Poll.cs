@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using Color = Discord.Color;
 
 namespace Mayfly.Services.Poll
 {

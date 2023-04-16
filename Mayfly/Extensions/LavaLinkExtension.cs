@@ -2,6 +2,7 @@
 using Lavalink4NET.Player;
 using Lavalink4NET.Artwork;
 using Mayfly.Utilities;
+using Color = Discord.Color;
 
 namespace Mayfly.Extensions
 {

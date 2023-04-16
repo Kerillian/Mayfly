@@ -6,6 +6,7 @@ using Mayfly.Services;
 using Mayfly.Structures;
 using Mayfly.UrlBuilders;
 using Mayfly.Utilities;
+using Color = Discord.Color;
 
 namespace Mayfly.Modules
 {

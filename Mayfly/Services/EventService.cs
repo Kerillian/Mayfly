@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Lavalink4NET.Logging;
 using Mayfly.Extensions;
+using Color = Discord.Color;
 
 namespace Mayfly.Services
 {

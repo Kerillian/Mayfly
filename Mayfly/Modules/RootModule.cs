@@ -4,6 +4,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Mayfly.Database;
 using Mayfly.Services;
+using Color = Discord.Color;
 
 namespace Mayfly.Modules
 {

@@ -8,6 +8,7 @@ using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
 using Mayfly.Services;
 using Mayfly.Utilities;
+using Color = Discord.Color;
 
 namespace Mayfly.Modules
 {

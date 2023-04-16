@@ -4,6 +4,7 @@ using Discord;
 using Discord.WebSocket;
 using Mayfly.Structures;
 using Mayfly.Utilities;
+using Color = Discord.Color;
 
 namespace Mayfly.Services.Trivia
 {

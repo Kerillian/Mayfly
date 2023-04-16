@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using Mayfly.Akinator;
 using Mayfly.Akinator.Enumerations;
 using Mayfly.Akinator.Model;
+using Color = Discord.Color;
 
 namespace Mayfly.Services
 {

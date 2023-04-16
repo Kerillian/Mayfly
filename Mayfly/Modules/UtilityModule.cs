@@ -134,6 +134,7 @@ namespace Mayfly.Modules
 		{
 			Discord.Color col = new Discord.Color(r, g, b);
 			using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32((byte)r, (byte)g, (byte)b, 255));
+
 			EmbedBuilder builder = new EmbedBuilder()
 			{
 				Title = StringUtility.GetProperName(ColorUtility.FindClosestKnownColor(col)),

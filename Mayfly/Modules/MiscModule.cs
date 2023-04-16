@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Mayfly.Services;
+using Color = Discord.Color;
 
 namespace Mayfly.Modules
 {
